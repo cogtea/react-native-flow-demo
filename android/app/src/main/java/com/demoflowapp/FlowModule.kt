@@ -174,29 +174,29 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             componentCallback = customComponentCallback,
             publicKey = BuildConfig.FLOW_API_KEY,
             environment = Environment.SANDBOX,
-            appearance = designTokens,
+            //appearance = designTokens,
             flowCoordinators = mapOf(PaymentMethodName.GooglePay to googlePayCoordinator!!)
         )
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 checkoutComponents = CheckoutComponentsFactory(config = configuration).create()
-                val flowComponent = checkoutComponents.create(ComponentName.Flow)
+                // val flowComponent = checkoutComponents.create(ComponentName.Flow)
                 //val googlePayComponent = checkoutComponents.create(PaymentMethodName.GooglePay)
                 // Log.d("FlowModule", "Created GooglePay component: $googlePayComponent")
                 //googlePayComponent.Render()
 
-                /*val googlePayComponent = checkoutComponents.create(PaymentMethodName.GooglePay)
+                val googlePayComponent = checkoutComponents.create(PaymentMethodName.GooglePay)
 
                 Log.d("FlowModule", if (googlePayComponent.isAvailable())
                     ":white_check_mark: Google Pay component is available"
                 else
                     ":x: Google Pay component is NOT available"
-                )*/
+                )
 
                 withContext(Dispatchers.Main) {
                     containerView?.let {
-                        val view = flowComponent.provideView(it)
+                        val view = googlePayComponent.provideView(it)
                         if (view != null) {
                             it.addView(view)
                         } else {

@@ -10,7 +10,14 @@ import {
   NativeModules,
 } from 'react-native';
 
+import GooglePayView from './GooglePayView';
+
 const { FlowModule, CheckoutFlowManager } = NativeModules;
+
+let paymentSessionID = '';
+let paymentSessionToken = '';
+let paymentSessionSecret = '';
+let publicKey = 'pk_sbox_cw74tz3jqjqisdg2qb3vpzeaxes'; // Replace with your real public key
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
@@ -114,18 +121,22 @@ function App(): React.JSX.Element {
       const { id, payment_session_token, payment_session_secret } = data;
 
       console.log('✅ Payment session created:', id);
+      paymentSessionID = id;
+      paymentSessionToken = payment_session_token;
+      paymentSessionSecret = payment_session_secret;
 
-      if (Platform.OS === 'ios') {
-        const initResult = await CheckoutFlowManager.initialize({
-          id,
-          payment_session_secret,
-        });
-        console.log('iOS initialization result:', initResult);
-        const renderResult = await CheckoutFlowManager.renderFlow();
-        console.log('iOS render result:', renderResult);
-      } else if (Platform.OS === 'android') {
-        FlowModule.startPaymentSession(id, payment_session_token, payment_session_secret);
-      }
+
+      // if (Platform.OS === 'ios') {
+      //   const initResult = await CheckoutFlowManager.initialize({
+      //     id,
+      //     payment_session_secret,
+      //   });
+      //   console.log('iOS initialization result:', initResult);
+      //   const renderResult = await CheckoutFlowManager.renderFlow();
+      //   console.log('iOS render result:', renderResult);
+      // } else if (Platform.OS === 'android') {
+      //   FlowModule.startPaymentSession(id, payment_session_token, payment_session_secret);
+      // }
 
       setStatus('Payment flow started');
       setShowingFlow(true);
@@ -148,11 +159,15 @@ function App(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container}>
+
       {showingFlow ? (
-        <View style={styles.overlay}>
-          <Text style={styles.processingText}>Payment Flow is active...</Text>
-          <Text style={styles.instructions}>Complete the payment and return.</Text>
-        </View>
+        <GooglePayView
+          style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
+          paymentSessionID={paymentSessionID}
+          paymentSessionToken={paymentSessionToken}
+          paymentSessionSecret={paymentSessionSecret}
+          publicKey={publicKey}
+        />
       ) : (
         <>
           <Text style={styles.title}>Checkout.com Flow Demo</Text>
@@ -195,7 +210,7 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#c00' },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   statusContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   errorContainer: {
