@@ -41,15 +41,6 @@ function App(): React.JSX.Element {
       console.log('✅ Payment Success Event:', data);
       setStatus(`Success: ${data.paymentId}`);
       setError(null);
-      try {
-        if (Platform.OS === 'ios') {
-          await CheckoutFlowManager.dismissFlow();
-        } else {
-          await FlowModule.dismissFlow();
-        }
-      } catch (e) {
-        console.warn('Dismiss error:', e);
-      }
       setShowingFlow(false);
     });
 
@@ -57,15 +48,6 @@ function App(): React.JSX.Element {
       console.error('❌ Payment Error Event:', errorData);
       setStatus('Error');
       setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
-      try {
-        if (Platform.OS === 'ios') {
-          await CheckoutFlowManager.dismissFlow();
-        } else {
-          await FlowModule.dismissFlow();
-        }
-      } catch (e) {
-        console.warn('Dismiss error:', e);
-      }
       setShowingFlow(false);
     });
 
