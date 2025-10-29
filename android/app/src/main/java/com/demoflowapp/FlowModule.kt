@@ -53,7 +53,9 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         }
 
         activity.runOnUiThread {
-            Log.d("FlowModule", "Starting payment session on UI thread")
+            if (BuildConfig.DEBUG) {
+                Log.d("FlowModule", "Starting payment session on UI thread")
+            }
 
             // Create container view
             containerView = FrameLayout(activity).apply {
@@ -90,13 +92,19 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
     ) {
         val customComponentCallback = ComponentCallback(
             onReady = { component ->
-                Log.d("FlowModule", "Component ready: ${component.name}")
+                if (BuildConfig.DEBUG) {
+                    Log.d("FlowModule", "Component ready: ${component.name}")
+                }
             },
             onSubmit = { component ->
-                Log.d("FlowModule", "Component submitted: ${component.name}")
+                if (BuildConfig.DEBUG) {
+                    Log.d("FlowModule", "Component submitted: ${component.name}")
+                }
             },
             onSuccess = { component, paymentID ->
-                Log.d("FlowModule", "Payment Success: ${component.name} - $paymentID")
+                if (BuildConfig.DEBUG) {
+                    Log.d("FlowModule", "Payment Success: ${component.name} - $paymentID")
+                }
                 val map = Arguments.createMap().apply {
                     putString("component", component::class.java.simpleName)
                     putString("paymentId", paymentID)
@@ -188,11 +196,15 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
                 val googlePayComponent = checkoutComponents.create(PaymentMethodName.GooglePay)
 
-                Log.d("FlowModule", if (googlePayComponent.isAvailable())
-                    ":white_check_mark: Google Pay component is available"
-                else
-                    ":x: Google Pay component is NOT available"
-                )
+                if (BuildConfig.DEBUG) {
+                    Log.d(
+                        "FlowModule",
+                        if (googlePayComponent.isAvailable())
+                            "✔️ Google Pay component is available"
+                        else
+                            "✖️ Google Pay component is NOT available"
+                    )
+                }
 
                 withContext(Dispatchers.Main) {
                     containerView?.let {
@@ -226,7 +238,9 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         currentActivity?.runOnUiThread {
             containerView?.let {
                 (it.parent as? ViewGroup)?.removeView(it)
-                Log.d("FlowModule", "Flow UI dismissed")
+                if (BuildConfig.DEBUG) {
+                    Log.d("FlowModule", "Flow UI dismissed")
+                }
             }
         }
     }

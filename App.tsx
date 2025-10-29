@@ -10,7 +10,7 @@ import {
   NativeModules,
 } from 'react-native';
 
-import GooglePayView from './GooglePayView';
+import GooglePayView, { SessionData, ApiCallResult } from './GooglePayView';
 
 const { FlowModule, CheckoutFlowManager } = NativeModules;
 
@@ -24,42 +24,108 @@ function App(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [showingFlow, setShowingFlow] = useState(false);
 
-  useEffect(() => {
-    if (Platform.OS === 'ios' && !CheckoutFlowManager) {
-      console.error('CheckoutFlowManager is not linked properly for iOS.');
-    }
-    if (Platform.OS === 'android' && !FlowModule) {
-      console.error('FlowModule is not linked properly for Android.');
-    }
+  const handleSubmit = async (sessionData: SessionData): Promise<ApiCallResult> => {
+    setStatus('Submitting payment...');
+    try {
+      // Ensure we have the raw session data
+      if (!sessionData.sessionData) {
+        throw new Error('No session data available for submission');
+      }
 
-    const nativeModule = Platform.OS === 'android' ? FlowModule : CheckoutFlowManager;
-    const flowEvents = new NativeEventEmitter(nativeModule);
+      // Make the API call to checkout.com to submit the modified payment session
+      // Using the raw session data from the SDK (not id/secret)
+      const response = await fetch(`https://api.sandbox.checkout.com/payment-sessions/${sessionData.id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer sk_sbox_eabgr5n7s3pno2f6xtscee6gwq=',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_data: sessionData.sessionData,
+          "3ds": {
+            enabled: true
+          }
+        }),
+      });
 
-    console.log('Attaching event listeners for Flow...');
+      const responseData = await response.json();
+      
+      if (response.ok) {
+        if (responseData.status === 'Action Required' && responseData.action?.type === '3ds') {
+          setStatus('3DS Authentication required...');
+        } else {
+          setStatus(`Success: ${responseData.id || 'Payment completed'}`);
+        }
+        // Hide the flow after handling submit (success path)
+        setError(null);
+        setShowingFlow(false);
 
-    const successSub = flowEvents.addListener('onFlowPaymentSuccess', async (data) => {
-      console.log('✅ Payment Success Event:', data);
-      setStatus(`Success: ${data.paymentId}`);
-      setError(null);
-      setShowingFlow(false);
-    });
-
-    const errorSub = flowEvents.addListener('onFlowPaymentError', async (errorData) => {
-      console.error('❌ Payment Error Event:', errorData);
+        return {
+          success: true,
+          data: {
+            response: JSON.stringify(responseData), // Send response as JSON string
+            paymentId: responseData.id,
+            status: responseData.status,
+            action: responseData.action,
+          },
+        };
+      } else {
+        setStatus('Error');
+        setError(`Payment failed: ${responseData.message || 'Unknown error'}`);
+        // Hide the flow on error as well
+        setShowingFlow(false);
+        return {
+          success: false,
+          error: responseData.message || 'Payment submission failed',
+        };
+      }
+    } catch (error) {
       setStatus('Error');
-      setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
+      setError(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      // Ensure the flow is hidden if an exception occurs
       setShowingFlow(false);
-    });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+  useEffect(() => {
+    const nativeModule = Platform.OS === 'android' ? FlowModule : CheckoutFlowManager;
+    let flowEvents: any;
+    let successSub: any;
+    let errorSub: any;
+
+    try {
+      if (!nativeModule) {
+        return;
+      }
+      flowEvents = new NativeEventEmitter(nativeModule);
+
+      successSub = flowEvents.addListener('onFlowPaymentSuccess', async (data: any) => {
+        setStatus(`Success: ${data.paymentId}`);
+        setError(null);
+        setShowingFlow(false);
+      });
+
+      errorSub = flowEvents.addListener('onFlowPaymentError', async (errorData: any) => {
+        setStatus('Error');
+        setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
+        setShowingFlow(false);
+      });
+    } catch (_e) {
+      // In non-native environments (e.g., Jest), NativeEventEmitter may not be constructible.
+      return;
+    }
 
     return () => {
-      successSub.remove();
-      errorSub.remove();
+      successSub?.remove?.();
+      errorSub?.remove?.();
     };
   }, []);
 
-  useEffect(() => {
-    console.log("🔁 showingFlow changed:", showingFlow);
-  }, [showingFlow]);
+
 
   const startPayment = async () => {
     setStatus('Processing...');
@@ -102,37 +168,15 @@ function App(): React.JSX.Element {
       const data = await response.json();
       const { id, payment_session_token, payment_session_secret } = data;
 
-      console.log('✅ Payment session created:', id);
       paymentSessionID = id;
       paymentSessionToken = payment_session_token;
       paymentSessionSecret = payment_session_secret;
 
-
-      // if (Platform.OS === 'ios') {
-      //   const initResult = await CheckoutFlowManager.initialize({
-      //     id,
-      //     payment_session_secret,
-      //   });
-      //   console.log('iOS initialization result:', initResult);
-      //   const renderResult = await CheckoutFlowManager.renderFlow();
-      //   console.log('iOS render result:', renderResult);
-      // } else if (Platform.OS === 'android') {
-      //   FlowModule.startPaymentSession(id, payment_session_token, payment_session_secret);
-      // }
-
       setStatus('Payment flow started');
       setShowingFlow(true);
 
-      // Fallback: dismiss flow overlay after 15s in case native event doesn't fire
-      setTimeout(() => {
-        if (showingFlow) {
-          console.warn('⚠️ Fallback timeout reached — dismissing manually');
-          setShowingFlow(false);
-        }
-      }, 15000);
 
     } catch (error) {
-      console.error('❌ Error:', error);
       setError(`Error: ${error instanceof Error ? error.message : String(error)}`);
       setStatus('Error');
       setShowingFlow(false);
@@ -149,6 +193,7 @@ function App(): React.JSX.Element {
           paymentSessionToken={paymentSessionToken}
           paymentSessionSecret={paymentSessionSecret}
           publicKey={publicKey}
+          handleSubmit={handleSubmit}
         />
       ) : (
         <>

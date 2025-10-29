@@ -5,18 +5,23 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
 import com.facebook.react.uimanager.ViewManager
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableArray
 
 class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
     override fun getName() = "RNGooglePayView"
 
+    override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
+        return mutableMapOf(
+            "onHandleSubmit" to mapOf("registrationName" to "onHandleSubmit")
+        )
+    }
+
     override fun createViewInstance(reactContext: ThemedReactContext): GooglePayView {
-        val activity = reactContext.currentActivity
+        // Important: use ThemedReactContext as the View context so Fabric registers
+        // the correct EventEmitter for touches. Passing an Activity context can cause
+        // "Cannot find EventEmitter for receivedTouches" errors.
         val appContext = reactContext.reactApplicationContext
-        return if (activity != null) {
-            GooglePayView(activity, appContext)
-        } else {
-            GooglePayView(reactContext, appContext)
-        }
+        return GooglePayView(reactContext, appContext)
     }
 
     // Ensure we attempt initialization after a full props batch is applied
@@ -48,6 +53,9 @@ class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
         }
     }
 
+    // Note: handleSubmit callback is set directly on the view via direct method call
+    // React Native @ReactProp doesn't support Callback type directly
+
     private fun maybeInit(view: GooglePayView) {
         val tag = view.tag as? Map<String, String> ?: return
         val id = tag["paymentSessionID"] ?: return
@@ -57,4 +65,6 @@ class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
             view.initialize(id, secret, key)
         }
     }
+
+
 }
