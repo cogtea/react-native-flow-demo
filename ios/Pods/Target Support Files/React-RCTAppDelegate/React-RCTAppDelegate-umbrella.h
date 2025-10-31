@@ -10,11 +10,13 @@
 #endif
 #endif
 
-#import "RCTAppDelegate+Protected.h"
 #import "RCTAppDelegate.h"
 #import "RCTAppSetupUtils.h"
 #import "RCTArchConfiguratorProtocol.h"
+#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RCTDependencyProvider.h"
+#import "RCTJSRuntimeConfiguratorProtocol.h"
+#import "RCTReactNativeFactory.h"
 #import "RCTRootViewFactory.h"
 #import "RCTUIConfiguratorProtocol.h"
 

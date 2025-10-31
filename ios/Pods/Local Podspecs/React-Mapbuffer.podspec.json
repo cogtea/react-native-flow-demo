@@ -1,6 +1,6 @@
 {
   "name": "React-Mapbuffer",
-  "version": "0.77.2",
+  "version": "0.81.0",
   "summary": "-",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,19 +10,36 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.77.2"
+    "tag": "v0.81.0"
   },
   "source_files": "react/renderer/mapbuffer/*.{cpp,h}",
   "exclude_files": "react/renderer/mapbuffer/tests",
   "public_header_files": "react/renderer/mapbuffer/*.h",
   "header_dir": "react/renderer/mapbuffer",
   "pod_target_xcconfig": {
-    "HEADER_SEARCH_PATHS": "\"$(PODS_TARGET_SRCROOT)\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-debug/React_debug.framework/Headers\"",
+    "HEADER_SEARCH_PATHS": [
+      "\"$(PODS_TARGET_SRCROOT)\"",
+      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-debug/React_debug.framework/Headers\"",
+      "$(PODS_ROOT)/glog",
+      "$(PODS_ROOT)/boost",
+      "$(PODS_ROOT)/DoubleConversion",
+      "$(PODS_ROOT)/fast_float/include",
+      "$(PODS_ROOT)/fmt/include",
+      "$(PODS_ROOT)/SocketRocket",
+      "$(PODS_ROOT)/RCT-Folly"
+    ],
     "USE_HEADERMAP": "YES",
     "CLANG_CXX_LANGUAGE_STANDARD": "c++20"
   },
   "dependencies": {
+    "React-debug": [],
     "glog": [],
-    "React-debug": []
+    "boost": [],
+    "DoubleConversion": [],
+    "fast_float": [],
+    "fmt": [],
+    "RCT-Folly": [],
+    "SocketRocket": [],
+    "RCT-Folly/Fabric": []
   }
 }

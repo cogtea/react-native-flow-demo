@@ -11,13 +11,15 @@ import {
 } from 'react-native';
 
 import GooglePayView, { SessionData, ApiCallResult } from './GooglePayView';
+import ApplePayView from './ApplePayView';
 
-const { FlowModule, CheckoutFlowManager } = NativeModules;
+const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any;
 
 let paymentSessionID = '';
 let paymentSessionToken = '';
 let paymentSessionSecret = '';
 let publicKey = 'pk_sbox_cw74tz3jqjqisdg2qb3vpzeaxes'; // Replace with your real public key
+const merchantIdentifier = 'merchant.com.flow.checkout.sandbox'; // Replace with your merchant ID
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
@@ -92,36 +94,66 @@ function App(): React.JSX.Element {
   };
 
   useEffect(() => {
-    const nativeModule = Platform.OS === 'android' ? FlowModule : CheckoutFlowManager;
-    let flowEvents: any;
-    let successSub: any;
-    let errorSub: any;
+    // Subscribe to success/error from platform-native modules
+    const subs: Array<{ remove: () => void } | undefined> = [];
 
     try {
-      if (!nativeModule) {
-        return;
+      // Android Flow module (for Google Pay success/error)
+      if (FlowModule && Platform.OS === 'android') {
+        const emitter = new NativeEventEmitter(FlowModule);
+        subs.push(
+          emitter.addListener('onFlowPaymentSuccess', (data: any) => {
+            setStatus(`Success: ${data.paymentId}`);
+            setError(null);
+            setShowingFlow(false);
+          }),
+          emitter.addListener('onFlowPaymentError', (errorData: any) => {
+            setStatus('Error');
+            setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
+            setShowingFlow(false);
+          })
+        );
       }
-      flowEvents = new NativeEventEmitter(nativeModule);
 
-      successSub = flowEvents.addListener('onFlowPaymentSuccess', async (data: any) => {
-        setStatus(`Success: ${data.paymentId}`);
-        setError(null);
-        setShowingFlow(false);
-      });
+      // iOS CheckoutFlowManager (if used elsewhere)
+      if (CheckoutFlowManager && Platform.OS === 'ios') {
+        const emitter = new NativeEventEmitter(CheckoutFlowManager);
+        subs.push(
+          emitter.addListener('onFlowPaymentSuccess', (data: any) => {
+            setStatus(`Success: ${data.paymentId}`);
+            setError(null);
+            setShowingFlow(false);
+          }),
+          emitter.addListener('onFlowPaymentError', (errorData: any) => {
+            setStatus('Error');
+            setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
+            setShowingFlow(false);
+          })
+        );
+      }
 
-      errorSub = flowEvents.addListener('onFlowPaymentError', async (errorData: any) => {
-        setStatus('Error');
-        setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
-        setShowingFlow(false);
-      });
+      // iOS ApplePayModule events from ApplePayView
+      if (ApplePayModule && Platform.OS === 'ios') {
+        const emitter = new NativeEventEmitter(ApplePayModule);
+        subs.push(
+          emitter.addListener('onFlowPaymentSuccess', (data: any) => {
+            setStatus(`Success: ${data.paymentId}`);
+            setError(null);
+            setShowingFlow(false);
+          }),
+          emitter.addListener('onFlowPaymentError', (errorData: any) => {
+            setStatus('Error');
+            setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
+            setShowingFlow(false);
+          })
+        );
+      }
     } catch (_e) {
       // In non-native environments (e.g., Jest), NativeEventEmitter may not be constructible.
-      return;
     }
 
     return () => {
-      successSub?.remove?.();
-      errorSub?.remove?.();
+      subs.forEach(s => s?.remove?.());
     };
   }, []);
 
@@ -187,14 +219,28 @@ function App(): React.JSX.Element {
     <SafeAreaView style={styles.container}>
 
       {showingFlow ? (
-        <GooglePayView
-          style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
-          paymentSessionID={paymentSessionID}
-          paymentSessionToken={paymentSessionToken}
-          paymentSessionSecret={paymentSessionSecret}
-          publicKey={publicKey}
-          handleSubmit={handleSubmit}
-        />
+        Platform.OS === 'ios' ? (
+          <ApplePayView
+            style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
+            paymentSessionID={paymentSessionID}
+            paymentSessionToken={paymentSessionToken}
+            paymentSessionSecret={paymentSessionSecret}
+            publicKey={publicKey}
+            merchantIdentifier={merchantIdentifier}
+            environment="sandbox"
+            handleSubmit={handleSubmit}
+          />
+        ) : (
+          <GooglePayView
+            style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
+            paymentSessionID={paymentSessionID}
+            paymentSessionToken={paymentSessionToken}
+            paymentSessionSecret={paymentSessionSecret}
+            publicKey={publicKey}
+            environment="sandbox"
+            handleSubmit={handleSubmit}
+          />
+        )
       ) : (
         <>
           <Text style={styles.title}>Checkout.com Flow Demo</Text>
@@ -222,6 +268,7 @@ function App(): React.JSX.Element {
           <View style={styles.moduleInfoContainer}>
             <Text>iOS Module: {CheckoutFlowManager ? '✅ Available' : '❌ Missing'}</Text>
             <Text>Android Module: {FlowModule ? '✅ Available' : '❌ Missing'}</Text>
+            <Text>ApplePayModule: {ApplePayModule ? '✅ Available' : '❌ Missing'}</Text>
             <Text>Current Platform: {Platform.OS}</Text>
           </View>
 

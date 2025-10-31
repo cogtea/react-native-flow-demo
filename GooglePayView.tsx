@@ -14,6 +14,7 @@ export interface ApiCallResult {
 }
 
 export interface GooglePayViewProps extends ViewProps {
+  environment?: 'sandbox' | 'production';
   paymentSessionID?: string;
   paymentSessionToken?: string;
   paymentSessionSecret?: string;

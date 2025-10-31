@@ -12,19 +12,20 @@
     "tag": "v2024.11.18.00"
   },
   "module_name": "folly",
+  "prepare_command": "echo '#pragma once\n\n#define FOLLY_MOBILE 1\n#define FOLLY_USE_LIBCPP 1\n#define FOLLY_HAVE_PTHREAD 1\n#define FOLLY_CFG_NO_COROUTINES 1\n#define FOLLY_HAVE_CLOCK_GETTIME 1\n\n#pragma clang diagnostic ignored \"-Wcomma\"' > folly/folly-config.h",
   "header_mappings_dir": ".",
   "dependencies": {
     "boost": [],
     "DoubleConversion": [],
     "glog": [],
     "fast_float": [
-      "6.1.4"
+      "8.0.0"
     ],
     "fmt": [
       "11.0.2"
     ]
   },
-  "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -Wno-comma -Wno-shorten-64-to-32 -DFOLLY_HAVE_PTHREAD=1 -Wno-documentation -faligned-new",
+  "compiler_flags": "-Wno-documentation -faligned-new",
   "preserve_paths": "folly/*.h",
   "libraries": "c++abi",
   "source_files": [

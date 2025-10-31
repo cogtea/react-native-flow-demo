@@ -18,6 +18,11 @@
 		51F7CEA92D566BA9001B4B38 /* CheckoutFlowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F7CEA82D566BA2001B4B38 /* CheckoutFlowManager.swift */; };
 		7699B88040F8A987B510C191 /* libPods-DemoFlowApp-DemoFlowAppTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-DemoFlowApp-DemoFlowAppTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		AA1FB0012E01AAAA00000001 /* ApplePayModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000001 /* ApplePayModule.swift */; };
+		AA1FB0012E01AAAA00000002 /* ApplePayModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000002 /* ApplePayModuleBridge.m */; };
+		AA1FB0012E01AAAA00000003 /* ApplePayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */; };
+		AA1FB0012E01AAAA00000004 /* ApplePayViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */; };
+		AA1FB0012E01AAAA00000005 /* ApplePayViewManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */; };
 		E220634379F7D94706EF20A4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -54,6 +59,11 @@
 		5DCACB8F33CDC322A6C60F78 /* libPods-DemoFlowApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-DemoFlowApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = DemoFlowApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-DemoFlowApp-DemoFlowAppTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DemoFlowApp-DemoFlowAppTests.release.xcconfig"; path = "Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests.release.xcconfig"; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000001 /* ApplePayModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayModule.swift; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000002 /* ApplePayModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ApplePayModuleBridge.m; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayView.swift; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayViewManager.swift; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ApplePayViewManagerBridge.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -98,6 +108,11 @@
 		13B07FAE1A68108700A75B9A /* DemoFlowApp */ = {
 			isa = PBXGroup;
 			children = (
+				AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */,
+				AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */,
+				AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */,
+				AA1FAFFF2E01AAAA00000001 /* ApplePayModule.swift */,
+				AA1FAFFF2E01AAAA00000002 /* ApplePayModuleBridge.m */,
 				51F7CEA82D566BA2001B4B38 /* CheckoutFlowManager.swift */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.mm */,
@@ -419,6 +434,11 @@
 				51F7CEA72D5668FD001B4B38 /* Dummy.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				51380AFF2D5BD4250044101C /* CheckoutFlowManagerBridge.m in Sources */,
+				AA1FB0012E01AAAA00000001 /* ApplePayModule.swift in Sources */,
+				AA1FB0012E01AAAA00000002 /* ApplePayModuleBridge.m in Sources */,
+				AA1FB0012E01AAAA00000003 /* ApplePayView.swift in Sources */,
+				AA1FB0012E01AAAA00000004 /* ApplePayViewManager.swift in Sources */,
+				AA1FB0012E01AAAA00000005 /* ApplePayViewManagerBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -738,7 +758,7 @@
 			repositoryURL = "https://github.com/checkout/checkout-ios-components";
 			requirement = {
 				kind = exactVersion;
-				version = "1.0.0-beta-3";
+				version = 1.2.5;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

@@ -205,6 +205,55 @@ export PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/to
 ulimit -n 8192 # Increases the file descriptor limit to prevent Metro Bundler errors
 ```
 
+---
+
+## iOS Apple Pay View (Checkout Components 1.2.5)
+
+An Apple Pay view is available with the same contract as the Android `GooglePayView`. It exposes a `handleSubmit` bridge so your app can submit the payment session to your backend, then pass the result back to the native SDK.
+
+Usage:
+
+```tsx
+import React from 'react';
+import { Platform } from 'react-native';
+import ApplePayView, { type SessionData, type ApiCallResult } from './ApplePayView';
+
+const publicKey = 'pk_sbox_...';
+
+async function handleSubmit(session: SessionData): Promise<ApiCallResult> {
+    // Use session.sessionData to call your backend or Checkout API
+    const res = await fetch(`https://api.sandbox.checkout.com/payment-sessions/${session.id}/submit`, {
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer <your secret key on server or test-only>',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_data: session.sessionData }),
+    });
+    const json = await res.json();
+    if (!res.ok) return { success: false, error: json.message || 'Submit failed' };
+    return { success: true, data: { response: JSON.stringify(json) } };
+}
+
+export function ApplePaySection({ id, secret }: { id: string; secret: string }) {
+    if (Platform.OS !== 'ios') return null;
+    return (
+        <ApplePayView
+            style={{ width: '100%', height: 52 }}
+            paymentSessionID={id}
+            paymentSessionSecret={secret}
+            publicKey={publicKey}
+            handleSubmit={handleSubmit}
+        />
+    );
+}
+```
+
+Notes:
+- The native component name is `RNApplePayView` and the event emitter module is `ApplePayModule`.
+- Events: `onHandleSubmit` (internal bridge), `onFlowPaymentSuccess`, `onFlowPaymentError`.
+- The Checkout Components SDK version is pinned to 1.2.5 via Swift Package in `checkout-ios-components/Package.swift`.
+
 </details>
 
 ### **2.7 (EXTRA) Understanding Gradle**

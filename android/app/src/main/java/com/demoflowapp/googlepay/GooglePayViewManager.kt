@@ -53,6 +53,15 @@ class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
         }
     }
 
+    @ReactProp(name = "environment")
+    fun setEnvironment(view: GooglePayView, value: String?) {
+        val env = when (value?.lowercase()) {
+            "production", "prod", "live" -> com.checkout.components.interfaces.Environment.PRODUCTION
+            else -> com.checkout.components.interfaces.Environment.SANDBOX
+        }
+        view.environment = env
+    }
+
     // Note: handleSubmit callback is set directly on the view via direct method call
     // React Native @ReactProp doesn't support Callback type directly
 

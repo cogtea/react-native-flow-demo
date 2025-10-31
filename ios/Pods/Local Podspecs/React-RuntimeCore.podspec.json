@@ -1,6 +1,6 @@
 {
   "name": "React-RuntimeCore",
-  "version": "0.77.2",
+  "version": "0.81.0",
   "summary": "The React Native Runtime.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.77.2"
+    "tag": "v0.81.0"
   },
   "source_files": [
     "*.{cpp,h}",
@@ -22,20 +22,15 @@
   ],
   "header_dir": "react/runtime",
   "pod_target_xcconfig": {
-    "HEADER_SEARCH_PATHS": "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Core\" \"${PODS_TARGET_SRCROOT}/../..\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-Fabric/React_Fabric.framework/Headers\"",
+    "HEADER_SEARCH_PATHS": "\"$(PODS_ROOT)/Headers/Private/React-Core\" \"${PODS_TARGET_SRCROOT}/../..\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers/platform/ios\" \"${PODS_CONFIGURATION_BUILD_DIR}/React-Fabric/React_Fabric.framework/Headers\" $(PODS_ROOT)/glog $(PODS_ROOT)/boost $(PODS_ROOT)/DoubleConversion $(PODS_ROOT)/fast_float/include $(PODS_ROOT)/fmt/include $(PODS_ROOT)/SocketRocket $(PODS_ROOT)/RCT-Folly \"${PODS_CONFIGURATION_BUILD_DIR}/React-jsitooling/JSITooling.framework/Headers\"",
     "USE_HEADERMAP": "YES",
     "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
     "GCC_WARN_PEDANTIC": "YES"
   },
-  "compiler_flags": "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_HAVE_CLOCK_GETTIME=1 -Wno-comma -Wno-shorten-64-to-32 -Wno-documentation",
   "dependencies": {
-    "RCT-Folly/Fabric": [
-      "2024.11.18.00"
-    ],
     "React-jsiexecutor": [],
     "React-cxxreact": [],
     "React-runtimeexecutor": [],
-    "glog": [],
     "React-jsi": [],
     "React-jserrorhandler": [],
     "React-performancetimeline": [],
@@ -44,6 +39,15 @@
     "React-featureflags": [],
     "React-Fabric": [],
     "hermes-engine": [],
-    "React-jsinspector": []
+    "glog": [],
+    "boost": [],
+    "DoubleConversion": [],
+    "fast_float": [],
+    "fmt": [],
+    "RCT-Folly": [],
+    "SocketRocket": [],
+    "RCT-Folly/Fabric": [],
+    "React-jsinspector": [],
+    "React-jsitooling": []
   }
 }

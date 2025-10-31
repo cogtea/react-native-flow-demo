@@ -10,8 +10,10 @@
 #endif
 #endif
 
+#import "RCTModuleProviders.h"
 #import "RCTModulesConformingToProtocolsProvider.h"
 #import "RCTThirdPartyComponentsProvider.h"
+#import "RCTUnstableModulesRequiringMainQueueSetupProvider.h"
 
 FOUNDATION_EXPORT double ReactCodegenVersionNumber;
 FOUNDATION_EXPORT const unsigned char ReactCodegenVersionString[];

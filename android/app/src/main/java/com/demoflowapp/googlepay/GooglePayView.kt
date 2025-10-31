@@ -46,6 +46,7 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
     private var hasInitialized = false
     private var currentSessionData: SessionData? = null
     private var pendingContinuations = mutableMapOf<String, kotlin.coroutines.Continuation<CustomApiCallResult>>()
+    var environment: Environment = Environment.SANDBOX
 
     // --- START: ADDED FIX ---
     /**
@@ -264,7 +265,7 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
                                 ),
                         componentCallback = customComponentCallback,
                         publicKey = publicKey,
-                        environment = Environment.SANDBOX,
+            environment = environment,
                         flowCoordinators =
                                 mapOf(PaymentMethodName.GooglePay to googlePayCoordinator!!)
                 )

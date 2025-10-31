@@ -1,6 +1,6 @@
 {
   "name": "fast_float",
-  "version": "6.1.4",
+  "version": "8.0.0",
   "license": {
     "type": "MIT"
   },
@@ -9,7 +9,7 @@
   "authors": "The fast_float contributors",
   "source": {
     "git": "https://github.com/fastfloat/fast_float.git",
-    "tag": "v6.1.4"
+    "tag": "v8.0.0"
   },
   "pod_target_xcconfig": {
     "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
