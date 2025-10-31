@@ -47,7 +47,7 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
     @ReactMethod
     fun startPaymentSession(paymentSessionID: String, paymentSessionToken: String, paymentSessionSecret: String) {
-        val activity = currentActivity as? ComponentActivity ?: run {
+    val activity = reactApplicationContext.currentActivity as? ComponentActivity ?: run {
             Log.e("FlowModule", "Current activity is not a ComponentActivity")
             return
         }
@@ -235,7 +235,7 @@ class FlowModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
 
     @ReactMethod
     fun dismissFlow() {
-        currentActivity?.runOnUiThread {
+        reactApplicationContext.currentActivity?.runOnUiThread {
             containerView?.let {
                 (it.parent as? ViewGroup)?.removeView(it)
                 if (BuildConfig.DEBUG) {
