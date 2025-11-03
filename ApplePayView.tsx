@@ -52,14 +52,17 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
       const { sessionData } = event;
       const { requestId, id, secret, sessionData: rawSessionData } = sessionData ?? {};
 
+      console.debug('[ApplePayView] onHandleSubmit event received', { requestId, id, hasSessionData: !!rawSessionData });
+
       try {
         const result = await handleSubmit({ id, secret, sessionData: rawSessionData });
+        console.debug('[ApplePayView] JS handleSubmit result', { requestId, success: result.success, error: result.error });
         ApplePayModule.handleSubmitResponse(requestId, result.success, {
           ...result.data,
           error: result.error,
         });
       } catch (error) {
-        console.error('Error in JS handleSubmit (Apple Pay):', error);
+        console.error('[ApplePayView] Error in JS handleSubmit (Apple Pay):', error);
         ApplePayModule.handleSubmitResponse(requestId, false, {
           error: error instanceof Error ? error.message : 'Unknown error',
         });

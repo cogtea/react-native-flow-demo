@@ -18,8 +18,8 @@ const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any
 let paymentSessionID = '';
 let paymentSessionToken = '';
 let paymentSessionSecret = '';
-let publicKey = 'pk_sbox_cw74tz3jqjqisdg2qb3vpzeaxes'; // Replace with your real public key
-const merchantIdentifier = 'merchant.com.flow.checkout.sandbox'; // Replace with your merchant ID
+let publicKey = 'pk_sbox_cwlkrqiyfrfceqz2ggxodhda2yh'; // Replace with your real public key
+const merchantIdentifier = 'merchant.com.joelle.flowmobile'; // Replace with your merchant ID
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
@@ -29,6 +29,7 @@ function App(): React.JSX.Element {
   const handleSubmit = async (sessionData: SessionData): Promise<ApiCallResult> => {
     setStatus('Submitting payment...');
     try {
+      console.debug('[App] handleSubmit called', { id: sessionData.id, hasSessionData: !!sessionData.sessionData });
       // Ensure we have the raw session data
       if (!sessionData.sessionData) {
         throw new Error('No session data available for submission');
@@ -39,7 +40,7 @@ function App(): React.JSX.Element {
       const response = await fetch(`https://api.sandbox.checkout.com/payment-sessions/${sessionData.id}/submit`, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer sk_sbox_eabgr5n7s3pno2f6xtscee6gwq=',
+          'Authorization': 'Bearer sk_sbox_y5cec2mmqkclnwptusvh4wi7eax',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -50,8 +51,11 @@ function App(): React.JSX.Element {
         }),
       });
 
-      const responseData = await response.json();
-      
+      const responseText = await response.text();
+      let responseData: any = null;
+      try { responseData = JSON.parse(responseText); } catch { responseData = { raw: responseText }; }
+      console.debug('[App] payment submit response', { status: response.status, ok: response.ok, responseData });
+
       if (response.ok) {
         if (responseData.status === 'Action Required' && responseData.action?.type === '3ds') {
           setStatus('3DS Authentication required...');
@@ -73,7 +77,7 @@ function App(): React.JSX.Element {
         };
       } else {
         setStatus('Error');
-        setError(`Payment failed: ${responseData.message || 'Unknown error'}`);
+        setError(`Payment failed: ${responseData.message || JSON.stringify(responseData) || 'Unknown error'}`);
         // Hide the flow on error as well
         setShowingFlow(false);
         return {
@@ -167,14 +171,14 @@ function App(): React.JSX.Element {
       const response = await fetch('https://api.sandbox.checkout.com/payment-sessions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer sk_sbox_eabgr5n7s3pno2f6xtscee6gwq=',
+          'Authorization': 'Bearer sk_sbox_y5cec2mmqkclnwptusvh4wi7eax',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           amount: 1000,
           currency: 'AED',
           reference: 'ORD-123A',
-          processing_channel_id: 'pc_6biffo54jgnufis4jenkhioawa',
+          processing_channel_id: 'pc_ticd6t2rrmnujacakafvukhbwu',
           billing: {
             address: {
               country: 'AE',

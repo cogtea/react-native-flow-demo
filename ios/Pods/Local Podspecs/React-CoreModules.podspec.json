@@ -1,6 +1,6 @@
 {
   "name": "React-CoreModules",
-  "version": "0.81.0",
+  "version": "0.82.1",
   "summary": "-",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -11,7 +11,7 @@
   "compiler_flags": "-Wno-nullability-completeness",
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.81.0"
+    "tag": "v0.82.1"
   },
   "source_files": "**/*.{c,m,mm,cpp}",
   "ios": {
@@ -39,6 +39,7 @@
     "HEADER_SEARCH_PATHS": [
       "\"$(PODS_TARGET_SRCROOT)/React/CoreModules\"",
       "\"${PODS_ROOT}/Headers/Public/ReactCodegen/react/renderer/components\"",
+      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-debug/React_debug.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers/platform/ios\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspector/jsinspector_modern.framework/Headers\"",
@@ -60,18 +61,19 @@
   "frameworks": "UIKit",
   "dependencies": {
     "RCTTypeSafety": [
-      "0.81.0"
+      "0.82.1"
     ],
     "React-Core/CoreModulesHeaders": [
-      "0.81.0"
+      "0.82.1"
     ],
     "React-RCTImage": [
-      "0.81.0"
+      "0.82.1"
     ],
     "React-jsi": [
-      "0.81.0"
+      "0.82.1"
     ],
     "React-RCTBlob": [],
+    "React-debug": [],
     "React-runtimeexecutor": [],
     "React-jsinspector": [],
     "React-jsinspectorcdp": [],

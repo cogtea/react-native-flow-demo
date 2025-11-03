@@ -1,6 +1,6 @@
 {
   "name": "React-domnativemodule",
-  "version": "0.81.0",
+  "version": "0.82.1",
   "summary": "React Native DOM native module",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.81.0"
+    "tag": "v0.82.1"
   },
   "source_files": "*.{cpp,h}",
   "header_dir": "react/nativemodule/dom",

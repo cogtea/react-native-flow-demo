@@ -1,6 +1,6 @@
 {
   "name": "React-FabricComponents",
-  "version": "0.81.0",
+  "version": "0.82.1",
   "summary": "Fabric Components for React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.81.0"
+    "tag": "v0.82.1"
   },
   "source_files": "dummyFile.cpp",
   "pod_target_xcconfig": {
@@ -113,6 +113,14 @@
           "header_dir": "react/renderer/components/iostextinput"
         },
         {
+          "name": "switch",
+          "source_files": [
+            "react/renderer/components/switch/iosswitch/**/*.{m,mm,cpp,h}"
+          ],
+          "exclude_files": "react/renderer/components/switch/iosswitch/**/MacOS*.{m,mm,cpp,h}",
+          "header_dir": "react/renderer/components/switch/"
+        },
+        {
           "name": "textinput",
           "source_files": "react/renderer/components/textinput/*.{m,mm,cpp,h}",
           "header_dir": "react/renderer/components/textinput"
@@ -128,6 +136,12 @@
           "source_files": "react/renderer/components/virtualview/**/*.{m,mm,cpp,h}",
           "exclude_files": "react/renderer/components/virtualview/tests",
           "header_dir": "react/renderer/components/virtualview"
+        },
+        {
+          "name": "virtualviewexperimental",
+          "source_files": "react/renderer/components/virtualviewexperimental/**/*.{m,mm,cpp,h}",
+          "exclude_files": "react/renderer/components/virtualviewexperimental/tests",
+          "header_dir": "react/renderer/components/virtualviewexperimental"
         },
         {
           "name": "rncore",

@@ -94,13 +94,29 @@ class ApplePayView: UIView {
 
       checkoutComponents = CheckoutComponents(configuration: configuration)
 
-  // Create Apple Pay component and render
-  let mId = (merchantIdentifier as String?) ?? "merchant.com.flow.checkout.sandbox"
-  let component = try checkoutComponents!.create(.applePay(merchantIdentifier: mId,
-                       showPayButton: true))
+      // Create Apple Pay component and render
+      let mId = (merchantIdentifier as String?) ?? "merchant.com.flow.checkout.sandbox"
+      let component = try checkoutComponents!.create(.applePay(merchantIdentifier: mId,
+                           showPayButton: true))
 
       guard let renderable = component as? any CheckoutComponents.Renderable else {
         NSLog("ApplePayView: component not renderable")
+        self.emit(name: "onFlowPaymentError", body: [
+          "component": "ApplePay",
+          "errorMessage": "Component not renderable",
+          "errorCode": "NOT_RENDERABLE"
+        ])
+        return
+      }
+
+      // If the SDK reports the component as unavailable, notify JS and don't render
+      if component.isAvailable == false {
+        NSLog("ApplePayView: component not available")
+        self.emit(name: "onFlowPaymentError", body: [
+          "component": "ApplePay",
+          "errorMessage": "Apple Pay is not available on this device",
+          "errorCode": "NOT_AVAILABLE"
+        ])
         return
       }
       let view = renderable.render()

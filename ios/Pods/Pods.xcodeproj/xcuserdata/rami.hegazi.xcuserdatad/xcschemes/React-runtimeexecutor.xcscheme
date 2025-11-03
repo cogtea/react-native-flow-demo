@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "54EB12219122432FA744088BC5A680D2"
-               BuildableName = "React-runtimeexecutor"
+               BuildableName = "libReact-runtimeexecutor.a"
                BlueprintName = "React-runtimeexecutor"
                ReferencedContainer = "container:Pods.xcodeproj">
             </BuildableReference>

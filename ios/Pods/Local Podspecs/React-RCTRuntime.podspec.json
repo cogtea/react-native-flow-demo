@@ -1,6 +1,6 @@
 {
   "name": "React-RCTRuntime",
-  "version": "0.81.0",
+  "version": "0.82.1",
   "summary": "RCTRuntime for React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.81.0"
+    "tag": "v0.82.1"
   },
   "source_files": "*.{h,mm}",
   "compiler_flags": "-DRCT_NEW_ARCH_ENABLED=1",
@@ -21,6 +21,7 @@
     "DEFINES_MODULE": "YES",
     "CLANG_CXX_LANGUAGE_STANDARD": "c++20",
     "HEADER_SEARCH_PATHS": [
+      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-debug/React_debug.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers/platform/ios\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsitooling/JSITooling.framework/Headers\"",
@@ -42,6 +43,7 @@
   "dependencies": {
     "React-Core": [],
     "React-jsi": [],
+    "React-debug": [],
     "React-runtimeexecutor": [],
     "React-jsitooling": [],
     "React-jsinspector": [],

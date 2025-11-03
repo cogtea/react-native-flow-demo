@@ -64,6 +64,7 @@
 		AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayView.swift; sourceTree = "<group>"; };
 		AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayViewManager.swift; sourceTree = "<group>"; };
 		AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ApplePayViewManagerBridge.m; sourceTree = "<group>"; };
+		E832CD3D2EB7900300909644 /* DemoFlowApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DemoFlowApp.entitlements; path = DemoFlowApp/DemoFlowApp.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -108,6 +109,7 @@
 		13B07FAE1A68108700A75B9A /* DemoFlowApp */ = {
 			isa = PBXGroup;
 			children = (
+				E832CD3D2EB7900300909644 /* DemoFlowApp.entitlements */,
 				AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */,
 				AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */,
 				AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */,
@@ -253,7 +255,7 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "checkout-ios-components-main" */,
+				E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "../../checkout-ios-components-main" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -310,9 +312,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -371,9 +377,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -388,9 +398,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -405,9 +419,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -510,6 +528,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = DemoFlowApp/DemoFlowApp.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = AN89M9K24C;
 				ENABLE_BITCODE = NO;
@@ -527,6 +548,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = DemoFlowApp;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "DemoFlowApp-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -540,7 +562,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = DemoFlowApp/DemoFlowApp.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = AN89M9K24C;
 				INFOPLIST_FILE = DemoFlowApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -630,10 +654,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -702,10 +723,7 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -746,7 +764,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "checkout-ios-components-main" */ = {
+		E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "../../checkout-ios-components-main" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../checkout-ios-components-main";
 		};

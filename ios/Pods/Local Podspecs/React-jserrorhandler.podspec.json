@@ -1,6 +1,6 @@
 {
   "name": "React-jserrorhandler",
-  "version": "0.81.0",
+  "version": "0.82.1",
   "summary": "-",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.81.0"
+    "tag": "v0.82.1"
   },
   "header_dir": "jserrorhandler",
   "source_files": [
