@@ -16,6 +16,7 @@ class ApplePayView: UIView {
   private var hasInitialized = false
   private var checkoutComponents: CheckoutComponents?
   private var hostingController: UIHostingController<AnyView>?
+  private weak var parentViewControllerRef: UIViewController?
   private var pendingContinuations: [String: CheckedContinuation<CheckoutComponents.APICallResult, Never>] = [:]
 
   override init(frame: CGRect) {
@@ -74,6 +75,10 @@ class ApplePayView: UIView {
             "component": paymentMethod.name,
             "paymentId": paymentID
           ])
+          // Ensure any presented Apple Pay sheet/modal is dismissed
+          DispatchQueue.main.async {
+            self.dismissAnyPresentedViewController()
+          }
         },
         onError: { [weak self] error in
           guard let self else { return }
@@ -82,6 +87,10 @@ class ApplePayView: UIView {
             "errorMessage": error.localizedDescription,
             "errorCode": "\(error.errorCode)"
           ])
+          // Dismiss any presented modal in case an error leaves the sheet open
+          DispatchQueue.main.async {
+            self.dismissAnyPresentedViewController()
+          }
         }
       )
 
@@ -126,6 +135,46 @@ class ApplePayView: UIView {
     }
   }
 
+  // Dismiss any presented view controller (e.g. the Apple Pay sheet) from the app's key window.
+  fileprivate func dismissAnyPresentedViewController() {
+    NSLog("ApplePayView: attempt dismissAnyPresentedViewController")
+
+    // Helper to attempt dismissing the presented controllers recursively
+    func tryDismiss(from root: UIViewController?) {
+      guard let root = root else { return }
+      if let presented = root.presentedViewController {
+        NSLog("ApplePayView: found presentedViewController of type: \(type(of: presented)) - dismissing")
+        presented.dismiss(animated: true) {
+          NSLog("ApplePayView: dismissed presentedViewController")
+        }
+      } else {
+        // If root itself was presented, dismiss it
+        if root.presentingViewController != nil {
+          NSLog("ApplePayView: root is presented itself - dismissing root")
+          root.dismiss(animated: true) {
+            NSLog("ApplePayView: dismissed root")
+          }
+        } else {
+          NSLog("ApplePayView: nothing to dismiss on this root (type: \(type(of: root)))")
+        }
+      }
+    }
+
+    // Scene-based windows (iOS 13+)
+    let sceneWindows = UIApplication.shared.connectedScenes
+      .compactMap({ $0 as? UIWindowScene })
+      .flatMap({ $0.windows })
+
+    for window in sceneWindows {
+      tryDismiss(from: window.rootViewController)
+    }
+
+    // Fallback: iterate all application windows
+    for window in UIApplication.shared.windows {
+      tryDismiss(from: window.rootViewController)
+    }
+  }
+
   private func resolveEnvironment() -> CheckoutComponents.Environment {
     let value = (environment as String?)?.lowercased() ?? "sandbox"
     switch value {
@@ -141,6 +190,18 @@ class ApplePayView: UIView {
     let controller = UIHostingController(rootView: swiftUIView)
     controller.view.backgroundColor = .clear
     controller.view.translatesAutoresizingMaskIntoConstraints = false
+
+    // Find a suitable parent UIViewController to host this SwiftUI controller.
+    // Prefer the nearest React view controller, fallback to key window root VC.
+    let parentVC: UIViewController? = self.reactViewController() ?? UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap { $0.windows }
+      .first(where: { $0.isKeyWindow })?.rootViewController
+
+    if let parentVC {
+      parentVC.addChild(controller)
+    }
+
     self.addSubview(controller.view)
     NSLayoutConstraint.activate([
       controller.view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
@@ -148,6 +209,12 @@ class ApplePayView: UIView {
       controller.view.topAnchor.constraint(equalTo: self.topAnchor),
       controller.view.bottomAnchor.constraint(equalTo: self.bottomAnchor)
     ])
+
+    if let parentVC {
+      controller.didMove(toParent: parentVC)
+    }
+
+    self.parentViewControllerRef = parentVC
     self.hostingController = controller
   }
 
