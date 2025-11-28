@@ -10,7 +10,7 @@ import {
   NativeModules,
 } from 'react-native';
 
-import GooglePayView, { SessionData, ApiCallResult } from './GooglePayView';
+import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable } from './GooglePayView';
 import ApplePayView from './ApplePayView';
 
 const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any;
@@ -167,6 +167,8 @@ function App(): React.JSX.Element {
     setStatus('Processing...');
     setError(null);
 
+    const googlePayAvailable = await isGooglePayAvailable();
+    console.debug('[App] isGooglePayAvailable:', googlePayAvailable);
     try {
       const response = await fetch('https://api.sandbox.checkout.com/payment-sessions', {
         method: 'POST',

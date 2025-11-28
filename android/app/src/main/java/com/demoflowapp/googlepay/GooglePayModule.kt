@@ -4,6 +4,8 @@ import com.facebook.react.bridge.*
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.demoflowapp.BuildConfig
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 
 @ReactModule(name = GooglePayModule.NAME)
 class GooglePayModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
@@ -21,14 +23,33 @@ class GooglePayModule(reactContext: ReactApplicationContext) : ReactContextBaseJ
         moduleInstance = this
     }
 
-    override fun getName(): String {
-        return NAME
-    }
+    override fun getName(): String = NAME
 
     fun emitHandleSubmitEvent(event: WritableMap) {
         reactApplicationContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             .emit("onHandleSubmit", event)
+    }
+
+    /* ----------------------------------------------------------
+     *  NEW: Simple Google Pay availability check
+     *  Uses Google Play Services status instead of isReadyToPay()
+     * --------------------------------------------------------- */
+    @ReactMethod
+    fun isGooglePayAvailable(promise: Promise) {
+        try {
+            val context = reactApplicationContext
+            val apiAvailability = GoogleApiAvailability.getInstance()
+
+            val result = apiAvailability.isGooglePlayServicesAvailable(context)
+
+            val available = result == ConnectionResult.SUCCESS
+
+            promise.resolve(available)
+
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
     }
 
     @ReactMethod
@@ -37,11 +58,7 @@ class GooglePayModule(reactContext: ReactApplicationContext) : ReactContextBaseJ
             android.util.Log.d("GooglePayModule", "📥 handleSubmitResponse called: requestId=$requestId, success=$success")
             android.util.Log.d("GooglePayModule", "📥 data: ${data?.toString()}")
         }
-        
-        // Call registry method directly - React Native bridge should already be on correct thread
-        if (BuildConfig.DEBUG) {
-            android.util.Log.d("GooglePayModule", "➡️ Calling GooglePayViewRegistry.handleSubmitResponse directly")
-        }
+
         try {
             GooglePayViewRegistry.handleSubmitResponse(requestId, success, data)
             if (BuildConfig.DEBUG) {
@@ -52,6 +69,7 @@ class GooglePayModule(reactContext: ReactApplicationContext) : ReactContextBaseJ
         }
     }
 }
+
 
 // Simple registry to track GooglePayView instances
 object GooglePayViewRegistry {
@@ -71,7 +89,7 @@ object GooglePayViewRegistry {
             android.util.Log.d("GooglePayViewRegistry", "🎯 Registered view IDs: ${views.keys}")
         }
         
-        // Find the view that matches this request
+        // Call handleSubmitResponse for all registered views
         views.values.forEach { view ->
             if (BuildConfig.DEBUG) {
                 android.util.Log.d("GooglePayViewRegistry", "📞 Calling handleSubmitResponse on view")

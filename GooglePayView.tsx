@@ -36,34 +36,29 @@ export const GooglePayView: React.FC<GooglePayViewProps> = (props) => {
   const { handleSubmit, ...otherProps } = props;
 
   useEffect(() => {
-    // Set up event listener to receive submit requests from native
-    
     if (Platform.OS !== 'android' || !handleSubmit || !GooglePayModule) {
       return;
     }
 
     const eventEmitter = new NativeEventEmitter(GooglePayModule);
-    
+
     const subscription = eventEmitter.addListener('onHandleSubmit', async (event) => {
       const { sessionData } = event;
       const { requestId, id, secret, sessionData: rawSessionData } = sessionData;
 
       try {
-        // Call the JavaScript handleSubmit function with the raw session data
-        const result = await handleSubmit({ 
-          id, 
-          secret, 
-          sessionData: rawSessionData // Pass the actual session data for /submit
+        const result = await handleSubmit({
+          id,
+          secret,
+          sessionData: rawSessionData
         });
-        
-        // Send response back to native
+
         GooglePayModule.handleSubmitResponse(requestId, result.success, {
           ...result.data,
           error: result.error,
         });
       } catch (error) {
         console.error('❌ Error in JavaScript handleSubmit:', error);
-        // Send error response back to native
         GooglePayModule.handleSubmitResponse(requestId, false, {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
@@ -76,10 +71,27 @@ export const GooglePayView: React.FC<GooglePayViewProps> = (props) => {
   }, [handleSubmit]);
 
   if (Platform.OS !== 'android' || !NativeGooglePayView) {
-    // iOS or if native view isn't available, render a harmless placeholder to keep layout stable
     return <View {...props} />;
   }
   return <NativeGooglePayView {...otherProps} />;
 };
+
+/* -------------------------------------------------------
+ * NEW: Check Google Pay availability
+ * ----------------------------------------------------- */
+export async function isGooglePayAvailable(): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+
+  try {
+    if (!GooglePayModule || !GooglePayModule.isGooglePayAvailable) {
+      console.warn('GooglePayModule.isGooglePayAvailable is not implemented natively.');
+      return false;
+    }
+    return await GooglePayModule.isGooglePayAvailable();
+  } catch (e) {
+    console.warn('Google Pay availability check error:', e);
+    return false;
+  }
+}
 
 export default GooglePayView;
