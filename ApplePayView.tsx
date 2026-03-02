@@ -28,6 +28,7 @@ export interface ApplePayViewProps extends ViewProps {
   publicKey?: string;
   merchantIdentifier?: string; // iOS Apple Pay merchant ID
   handleSubmit?: (sessionData: SessionData) => Promise<ApiCallResult>;
+  hasHandleSubmitListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
 }
@@ -50,7 +51,11 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
     const eventEmitter = new NativeEventEmitter(ApplePayModule);
     const subscription = eventEmitter.addListener('onHandleSubmit', async (event) => {
       const { sessionData } = event;
-      const { requestId, id, secret, sessionData: rawSessionData } = sessionData ?? {};
+      const { component, requestId, id, secret, sessionData: rawSessionData } = sessionData ?? {};
+
+      if (component !== 'applepay') {
+        return;
+      }
 
       console.debug('[ApplePayView] onHandleSubmit event received', { requestId, id, hasSessionData: !!rawSessionData });
 
@@ -75,7 +80,13 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
   if (Platform.OS !== 'ios' || !NativeApplePayView) {
     return <View {...props} />;
   }
-  return <NativeApplePayView {...otherProps} />;
+  return (
+    <NativeApplePayView
+      {...otherProps}
+      paymentMethod="applepay"
+      hasHandleSubmitListener={!!handleSubmit}
+    />
+  );
 };
 
 export default ApplePayView;

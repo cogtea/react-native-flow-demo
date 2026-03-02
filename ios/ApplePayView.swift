@@ -3,6 +3,7 @@ import UIKit
 import SwiftUI
 import React
 import CheckoutComponentsSDK
+import Foundation
 
 class ApplePayView: UIView {
   // MARK: - Props set from RN
@@ -11,6 +12,8 @@ class ApplePayView: UIView {
   @objc var publicKey: NSString? { didSet { maybeInitialize() } }
   @objc var merchantIdentifier: NSString? { didSet { maybeInitialize() } }
   @objc var environment: NSString? { didSet { maybeInitialize() } }
+  @objc var paymentMethod: NSString? { didSet { maybeInitialize() } }
+  @objc var hasHandleSubmitListener: Bool = false { didSet { maybeInitialize() } }
 
   // MARK: - Private state
   private var hasInitialized = false
@@ -63,12 +66,12 @@ class ApplePayView: UIView {
         onChange: { _ in },
         onSubmit: { _ in },
         onTokenized: nil,
-        handleSubmit: { [weak self] submitData in
+        handleSubmit: hasHandleSubmitListener ? { [weak self] submitData in
           guard let self else { return .failure }
           return await self.bridgeHandleSubmit(sessionId: paymentSessionID,
                                                secret: paymentSessionSecret,
                                                submitData: submitData)
-        },
+        } : nil,
         onSuccess: { [weak self] paymentMethod, paymentID in
           guard let self else { return }
           self.emit(name: "onFlowPaymentSuccess", body: [
@@ -103,10 +106,21 @@ class ApplePayView: UIView {
 
       checkoutComponents = CheckoutComponents(configuration: configuration)
 
-      // Create Apple Pay component and render
-      let mId = (merchantIdentifier as String?) ?? "merchant.com.flow.checkout.sandbox"
-      let component = try checkoutComponents!.create(.applePay(merchantIdentifier: mId,
-                           showPayButton: true))
+      let selectedPaymentMethod = ((paymentMethod as String?) ?? "applepay").lowercased()
+
+      let component: any CheckoutComponents.PaymentComponent
+      if selectedPaymentMethod == "card" {
+        component = try checkoutComponents!.create(
+          .card(
+            showPayButton: true,
+            paymentButtonAction: .payment
+          )
+        )
+      } else {
+        let mId = (merchantIdentifier as String?) ?? "merchant.com.flow.checkout.sandbox"
+        component = try checkoutComponents!.create(.applePay(merchantIdentifier: mId,
+                             showPayButton: true))
+      }
 
       guard let renderable = component as? any CheckoutComponents.Renderable else {
         NSLog("ApplePayView: component not renderable")
@@ -224,7 +238,9 @@ class ApplePayView: UIView {
   }
 
   private func emitHandleSubmit(requestId: String, id: String, secret: String, submitData: String) {
+    let component = ((paymentMethod as String?) ?? "applepay").lowercased()
     let session: [String: Any] = [
+      "component": component,
       "requestId": requestId,
       "id": id,
       "secret": secret,
@@ -241,7 +257,7 @@ class ApplePayView: UIView {
   }
 
   fileprivate func bridgeHandleSubmit(sessionId: String, secret: String, submitData: String) async -> CheckoutComponents.APICallResult {
-    let requestId = sessionId
+    let requestId = UUID().uuidString
     return await withCheckedContinuation { (continuation: CheckedContinuation<CheckoutComponents.APICallResult, Never>) in
       // Store continuation
       self.pendingContinuations[requestId] = continuation

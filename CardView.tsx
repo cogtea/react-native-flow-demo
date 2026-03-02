@@ -26,58 +26,112 @@ export interface CardViewProps extends ViewProps {
 }
 
 const { CardModule } = NativeModules;
+const { ApplePayModule } = NativeModules;
 const CARD_HANDLE_SUBMIT_EVENT = 'onCardHandleSubmit';
+const APPLE_PAY_HANDLE_SUBMIT_EVENT = 'onHandleSubmit';
 
-// Native component name must match the one returned by the Android ViewManager: RNCardView
-const VIEW_NAME = 'RNCardView';
+const ANDROID_VIEW_NAME = 'RNCardView';
+const IOS_VIEW_NAME = 'RNApplePayView';
 
-// Minimal Android-only wrapper; native-side onAfterUpdateTransaction ensures init after props are set
-const NativeCardView: any = Platform.OS === 'android' ? requireNativeComponent(VIEW_NAME) : null;
+const NativeCardViewAndroid: any = Platform.OS === 'android' ? requireNativeComponent(ANDROID_VIEW_NAME) : null;
+const NativeCardViewIOS: any = Platform.OS === 'ios' ? requireNativeComponent(IOS_VIEW_NAME) : null;
 
 export const CardView: React.FC<CardViewProps> = (props) => {
   const { handleSubmit, ...otherProps } = props;
 
   useEffect(() => {
-    if (Platform.OS !== 'android' || !handleSubmit || !CardModule) {
+    if (!handleSubmit) {
       return;
     }
 
-    const eventEmitter = new NativeEventEmitter(CardModule);
+    if (Platform.OS === 'android' && CardModule) {
+      const eventEmitter = new NativeEventEmitter(CardModule);
 
-    const subscription = eventEmitter.addListener(CARD_HANDLE_SUBMIT_EVENT, async (event) => {
-      const { sessionData } = event;
-      const { requestId, id, secret, sessionData: rawSessionData } = sessionData;
+      const subscription = eventEmitter.addListener(CARD_HANDLE_SUBMIT_EVENT, async (event) => {
+        const { sessionData } = event;
+        const { requestId, id, secret, sessionData: rawSessionData } = sessionData;
 
-      try {
-        const result = await handleSubmit({
-          id,
-          secret,
-          sessionData: rawSessionData
-        });
+        try {
+          const result = await handleSubmit({
+            id,
+            secret,
+            sessionData: rawSessionData
+          });
 
-        CardModule.handleSubmitResponse(requestId, result.success, {
-          ...result.data,
-          error: result.error,
-        });
-      } catch (error) {
-        console.error('❌ Error in JavaScript handleSubmit:', error);
-        CardModule.handleSubmitResponse(requestId, false, {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    });
+          CardModule.handleSubmitResponse(requestId, result.success, {
+            ...result.data,
+            error: result.error,
+          });
+        } catch (error) {
+          console.error('❌ Error in JavaScript handleSubmit:', error);
+          CardModule.handleSubmitResponse(requestId, false, {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      });
 
-    return () => {
-      subscription.remove();
-    };
+      return () => {
+        subscription.remove();
+      };
+    }
+
+    if (Platform.OS === 'ios' && ApplePayModule) {
+      const eventEmitter = new NativeEventEmitter(ApplePayModule);
+
+      const subscription = eventEmitter.addListener(APPLE_PAY_HANDLE_SUBMIT_EVENT, async (event) => {
+        const { sessionData } = event;
+        const { component, requestId, id, secret, sessionData: rawSessionData } = sessionData ?? {};
+
+        if (component !== 'card') {
+          return;
+        }
+
+        try {
+          const result = await handleSubmit({
+            id,
+            secret,
+            sessionData: rawSessionData
+          });
+
+          ApplePayModule.handleSubmitResponse(requestId, result.success, {
+            ...result.data,
+            error: result.error,
+          });
+        } catch (error) {
+          console.error('❌ Error in JavaScript handleSubmit:', error);
+          ApplePayModule.handleSubmitResponse(requestId, false, {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      });
+
+      return () => {
+        subscription.remove();
+      };
+    }
+
+    return;
   }, [handleSubmit]);
 
-  if (Platform.OS !== 'android' || !NativeCardView) {
+  if (Platform.OS === 'android' && NativeCardViewAndroid) {
+    return <NativeCardViewAndroid {...otherProps} hasHandleSubmitListener={!!handleSubmit} />;
+  }
+
+  if (Platform.OS === 'ios' && NativeCardViewIOS) {
+    return (
+      <NativeCardViewIOS
+        {...otherProps}
+        paymentMethod="card"
+        hasHandleSubmitListener={!!handleSubmit}
+      />
+    );
+  }
+
+  if (!NativeCardViewAndroid && !NativeCardViewIOS) {
     return <View {...props} />;
   }
-  
-  // Pass hasHandleSubmitListener flag based on whether handleSubmit is provided
-  return <NativeCardView {...otherProps} hasHandleSubmitListener={!!handleSubmit} />;
+
+  return <View {...props} />;
 };
 
 export default CardView;
