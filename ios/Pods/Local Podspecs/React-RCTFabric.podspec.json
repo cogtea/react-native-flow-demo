@@ -1,6 +1,6 @@
 {
   "name": "React-RCTFabric",
-  "version": "0.82.1",
+  "version": "0.81.0",
   "summary": "RCTFabric for React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.82.1"
+    "tag": "v0.81.0"
   },
   "source_files": "Fabric/**/*.{c,h,m,mm,S,cpp}",
   "compiler_flags": "-DRCT_NEW_ARCH_ENABLED=1",
@@ -39,7 +39,6 @@
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-FabricComponents/React_FabricComponents.framework/Headers/react/renderer/components/scrollview/platform/cxx\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-FabricComponents/React_FabricComponents.framework/Headers/react/renderer/components/text/platform/cxx\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-FabricComponents/React_FabricComponents.framework/Headers/react/renderer/components/textinput/platform/ios\"",
-      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-FabricComponents/React_FabricComponents.framework/Headers/react/renderer/components/switch/iosswitch\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers/react/renderer/graphics/platform/ios\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-ImageManager/React_ImageManager.framework/Headers\"",
@@ -58,7 +57,6 @@
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectorcdp/jsinspector_moderncdp.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectornetwork/jsinspector_modernnetwork.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectortracing/jsinspector_moderntracing.framework/Headers\"",
-      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-performancecdpmetrics/React_performancecdpmetrics.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-renderercss/React_renderercss.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-RCTFBReactNativeSpec/React_RCTFBReactNativeSpec.framework/Headers\"",
       "$(PODS_ROOT)/glog",
@@ -96,7 +94,6 @@
     "React-jsinspectorcdp": [],
     "React-jsinspectornetwork": [],
     "React-jsinspectortracing": [],
-    "React-performancecdpmetrics": [],
     "React-renderercss": [],
     "React-RCTFBReactNativeSpec": [],
     "hermes-engine": [],

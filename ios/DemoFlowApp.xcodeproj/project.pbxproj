@@ -23,6 +23,7 @@
 		AA1FB0012E01AAAA00000003 /* ApplePayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */; };
 		AA1FB0012E01AAAA00000004 /* ApplePayViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */; };
 		AA1FB0012E01AAAA00000005 /* ApplePayViewManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */; };
+		AA1FB0012E01AAAA00000006 /* CardPayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1FAFFF2E01AAAA00000006 /* CardPayView.swift */; };
 		E220634379F7D94706EF20A4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -64,6 +65,7 @@
 		AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayView.swift; sourceTree = "<group>"; };
 		AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplePayViewManager.swift; sourceTree = "<group>"; };
 		AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ApplePayViewManagerBridge.m; sourceTree = "<group>"; };
+		AA1FAFFF2E01AAAA00000006 /* CardPayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardPayView.swift; sourceTree = "<group>"; };
 		E832CD3D2EB7900300909644 /* DemoFlowApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DemoFlowApp.entitlements; path = DemoFlowApp/DemoFlowApp.entitlements; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -111,6 +113,7 @@
 			children = (
 				E832CD3D2EB7900300909644 /* DemoFlowApp.entitlements */,
 				AA1FAFFF2E01AAAA00000003 /* ApplePayView.swift */,
+				AA1FAFFF2E01AAAA00000006 /* CardPayView.swift */,
 				AA1FAFFF2E01AAAA00000004 /* ApplePayViewManager.swift */,
 				AA1FAFFF2E01AAAA00000005 /* ApplePayViewManagerBridge.m */,
 				AA1FAFFF2E01AAAA00000001 /* ApplePayModule.swift */,
@@ -255,7 +258,7 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "../../checkout-ios-components-main" */,
+				51F7CEAF2D567D7E001B4B38 /* XCRemoteSwiftPackageReference "checkout-ios-components" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -312,13 +315,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -377,13 +376,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -398,13 +393,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp/Pods-DemoFlowApp-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -419,13 +410,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DemoFlowApp-DemoFlowAppTests/Pods-DemoFlowApp-DemoFlowAppTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -455,6 +442,7 @@
 				AA1FB0012E01AAAA00000001 /* ApplePayModule.swift in Sources */,
 				AA1FB0012E01AAAA00000002 /* ApplePayModuleBridge.m in Sources */,
 				AA1FB0012E01AAAA00000003 /* ApplePayView.swift in Sources */,
+				AA1FB0012E01AAAA00000006 /* CardPayView.swift in Sources */,
 				AA1FB0012E01AAAA00000004 /* ApplePayViewManager.swift in Sources */,
 				AA1FB0012E01AAAA00000005 /* ApplePayViewManagerBridge.m in Sources */,
 			);
@@ -654,7 +642,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -723,7 +714,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -762,13 +756,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-		E8E6CF942DC9DB7400525908 /* XCLocalSwiftPackageReference "../../checkout-ios-components-main" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../checkout-ios-components-main";
-		};
-/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		51F7CEAF2D567D7E001B4B38 /* XCRemoteSwiftPackageReference "checkout-ios-components" */ = {

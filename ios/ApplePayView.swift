@@ -3,9 +3,8 @@ import UIKit
 import SwiftUI
 import React
 import CheckoutComponentsSDK
-import Foundation
 
-class ApplePayView: UIView {
+class ApplePayView: UIView, HandleSubmitResponseTarget {
   // MARK: - Props set from RN
   @objc var paymentSessionID: NSString? { didSet { ApplePayViewRegistry.update(self); maybeInitialize() } }
   @objc var paymentSessionSecret: NSString? { didSet { maybeInitialize() } }
@@ -58,6 +57,13 @@ class ApplePayView: UIView {
   // Always use the real session id for backend calls
   let session = PaymentSession(id: paymentSessionID, paymentSessionSecret: paymentSessionSecret)
 
+      let handleSubmitCallback: ((CheckoutComponents.SessionData) async -> CheckoutComponents.APICallResult)? = hasHandleSubmitListener ? { [weak self] submitData in
+        guard let self else { return .failure }
+        return await self.bridgeHandleSubmit(sessionId: paymentSessionID,
+                                             secret: paymentSessionSecret,
+                                             submitData: submitData)
+      } : nil
+
       let callbacks = CheckoutComponents.Callbacks(
         onReady: { paymentMethod in
           NSLog("ApplePayView onReady: \(paymentMethod.name)")
@@ -65,13 +71,7 @@ class ApplePayView: UIView {
         handleTap: { _ async -> Bool in true },
         onChange: { _ in },
         onSubmit: { _ in },
-        onTokenized: nil,
-        handleSubmit: hasHandleSubmitListener ? { [weak self] submitData in
-          guard let self else { return .failure }
-          return await self.bridgeHandleSubmit(sessionId: paymentSessionID,
-                                               secret: paymentSessionSecret,
-                                               submitData: submitData)
-        } : nil,
+        handleSubmit: handleSubmitCallback,
         onSuccess: { [weak self] paymentMethod, paymentID in
           guard let self else { return }
           self.emit(name: "onFlowPaymentSuccess", body: [
@@ -108,7 +108,7 @@ class ApplePayView: UIView {
 
       let selectedPaymentMethod = ((paymentMethod as String?) ?? "applepay").lowercased()
 
-      let component: any CheckoutComponents.PaymentComponent
+      let component: any CheckoutComponents.Actionable
       if selectedPaymentMethod == "card" {
         component = try checkoutComponents!.create(
           .card(
@@ -122,16 +122,6 @@ class ApplePayView: UIView {
                              showPayButton: true))
       }
 
-      guard let renderable = component as? any CheckoutComponents.Renderable else {
-        NSLog("ApplePayView: component not renderable")
-        self.emit(name: "onFlowPaymentError", body: [
-          "component": "ApplePay",
-          "errorMessage": "Component not renderable",
-          "errorCode": "NOT_RENDERABLE"
-        ])
-        return
-      }
-
       // If the SDK reports the component as unavailable, notify JS and don't render
       if component.isAvailable == false {
         NSLog("ApplePayView: component not available")
@@ -142,7 +132,7 @@ class ApplePayView: UIView {
         ])
         return
       }
-      let view = renderable.render()
+      let view = component.render()
       attachSwiftUIView(view)
     } catch {
       NSLog("ApplePayView init error: \(error.localizedDescription)")

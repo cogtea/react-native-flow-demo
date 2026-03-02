@@ -1,5 +1,5 @@
 {
-  "originHash" : "8fc36206a2779d46719352f372e72d35b54b3d7c0c02736e291a1b47d9e27e69",
+  "originHash" : "2ec63847507796054d21f7a624242b3bedd082e77eba63b5cb530e44adfe6f0e",
   "pins" : [
     {
       "identity" : "checkout-event-logger-ios-framework",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "a914d754b4ffb1843730e8e1f8e7e60c4bf81cf9",
         "version" : "1.2.4"
+      }
+    },
+    {
+      "identity" : "checkout-ios-components",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/checkout/checkout-ios-components",
+      "state" : {
+        "revision" : "ca5cabd991ba13ae35a34b7dc75a8043f5082040",
+        "version" : "1.2.5"
       }
     },
     {

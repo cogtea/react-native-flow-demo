@@ -1,6 +1,6 @@
 {
   "name": "React-Fabric",
-  "version": "0.82.1",
+  "version": "0.81.0",
   "summary": "Fabric for React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.82.1"
+    "tag": "v0.81.0"
   },
   "source_files": "dummyFile.cpp",
   "pod_target_xcconfig": {
@@ -150,7 +150,6 @@
       "source_files": "react/renderer/scheduler/**/*.{m,mm,cpp,h}",
       "header_dir": "react/renderer/scheduler",
       "dependencies": {
-        "React-performancecdpmetrics": [],
         "React-performancetimeline": [],
         "React-Fabric/observers/events": []
       }

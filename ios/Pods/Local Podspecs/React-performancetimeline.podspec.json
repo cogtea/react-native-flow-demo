@@ -1,6 +1,6 @@
 {
   "name": "React-performancetimeline",
-  "version": "0.82.1",
+  "version": "0.81.0",
   "summary": "React performance timeline utilities",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.82.1"
+    "tag": "v0.81.0"
   },
   "source_files": "**/*.{cpp,h}",
   "header_dir": "react/performance/timeline",

@@ -31,7 +31,7 @@ const CARD_HANDLE_SUBMIT_EVENT = 'onCardHandleSubmit';
 const APPLE_PAY_HANDLE_SUBMIT_EVENT = 'onHandleSubmit';
 
 const ANDROID_VIEW_NAME = 'RNCardView';
-const IOS_VIEW_NAME = 'RNApplePayView';
+const IOS_VIEW_NAME = 'RNCardView';
 
 const NativeCardViewAndroid: any = Platform.OS === 'android' ? requireNativeComponent(ANDROID_VIEW_NAME) : null;
 const NativeCardViewIOS: any = Platform.OS === 'ios' ? requireNativeComponent(IOS_VIEW_NAME) : null;

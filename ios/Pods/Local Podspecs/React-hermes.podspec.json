@@ -1,6 +1,6 @@
 {
   "name": "React-hermes",
-  "version": "0.82.1",
+  "version": "0.81.0",
   "summary": "Hermes engine for React Native",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.82.1"
+    "tag": "v0.81.0"
   },
   "source_files": [
     "executor/*.{cpp,h}",
@@ -26,7 +26,6 @@
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectortracing/jsinspector_moderntracing.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers\"",
       "\"${PODS_CONFIGURATION_BUILD_DIR}/React-runtimeexecutor/React_runtimeexecutor.framework/Headers/platform/ios\"",
-      "\"${PODS_CONFIGURATION_BUILD_DIR}/React-oscompat/React_oscompat.framework/Headers\"",
       "$(PODS_ROOT)/glog",
       "$(PODS_ROOT)/boost",
       "$(PODS_ROOT)/DoubleConversion",
@@ -41,21 +40,20 @@
   "header_dir": "reacthermes",
   "dependencies": {
     "React-cxxreact": [
-      "0.82.1"
+      "0.81.0"
     ],
     "React-jsiexecutor": [
-      "0.82.1"
+      "0.81.0"
     ],
     "React-jsinspector": [],
     "React-jsinspectorcdp": [],
     "React-jsinspectortracing": [],
     "React-perflogger": [
-      "0.82.1"
+      "0.81.0"
     ],
     "hermes-engine": [],
     "React-jsi": [],
     "React-runtimeexecutor": [],
-    "React-oscompat": [],
     "glog": [],
     "boost": [],
     "DoubleConversion": [],

@@ -203,7 +203,7 @@ function App(): React.JSX.Element {
             },
           },
           "3ds": {
-            enabled: true,
+            enabled: false,
           },
           customer: {
             name: 'Jia Tsang',
@@ -286,7 +286,7 @@ function App(): React.JSX.Element {
                   publicKey={publicKey}
                   environment="sandbox"
                   hasHandleSubmitListener={true}
-                  handleSubmit={handleSubmit}
+                  //handleSubmit={handleSubmit}
                 />
               ) : (
                 <View style={styles.loadingContainer}>

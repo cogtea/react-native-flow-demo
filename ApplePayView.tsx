@@ -37,9 +37,13 @@ const { ApplePayModule } = NativeModules as { ApplePayModule?: any };
 
 // Native component name must match the iOS ViewManager: RNApplePayView
 const VIEW_NAME = 'RNApplePayView';
+const IOS_NATIVE_VIEW_CACHE_KEY = '__RN_NATIVE_VIEW_RNApplePayView__';
 
 // Minimal iOS-only wrapper; native-side should initialize after props are set
-const NativeApplePayView: any = Platform.OS === 'ios' ? requireNativeComponent(VIEW_NAME) : null;
+const NativeApplePayView: any = Platform.OS === 'ios'
+  ? ((globalThis as any)[IOS_NATIVE_VIEW_CACHE_KEY] ??
+      (((globalThis as any)[IOS_NATIVE_VIEW_CACHE_KEY] = requireNativeComponent(VIEW_NAME))))
+  : null;
 
 export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
   const { handleSubmit, ...otherProps } = props;

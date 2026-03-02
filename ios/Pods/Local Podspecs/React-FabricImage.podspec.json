@@ -1,6 +1,6 @@
 {
   "name": "React-FabricImage",
-  "version": "0.82.1",
+  "version": "0.81.0",
   "summary": "Image Component for Fabric for React Native.",
   "homepage": "https://reactnative.dev/",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "source": {
     "git": "https://github.com/facebook/react-native.git",
-    "tag": "v0.82.1"
+    "tag": "v0.81.0"
   },
   "source_files": "react/renderer/components/image/**/*.{m,mm,cpp,h}",
   "exclude_files": "react/renderer/components/image/tests",
@@ -42,13 +42,13 @@
   },
   "dependencies": {
     "React-jsiexecutor": [
-      "0.82.1"
+      "0.81.0"
     ],
     "RCTRequired": [
-      "0.82.1"
+      "0.81.0"
     ],
     "RCTTypeSafety": [
-      "0.82.1"
+      "0.81.0"
     ],
     "React-jsi": [],
     "React-logger": [],

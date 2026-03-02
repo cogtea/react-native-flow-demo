@@ -5,10 +5,16 @@ import React
 class ApplePayViewManager: RCTViewManager {
   override static func requiresMainQueueSetup() -> Bool { true }
 
-  // Exported module name to match JS requireNativeComponent('RNApplePayView')
-  @objc override static func moduleName() -> String! { return "RNApplePayView" }
-
   override func view() -> UIView! {
     return ApplePayView()
+  }
+}
+
+@objc(CardViewIOSManager)
+class CardViewIOSManager: RCTViewManager {
+  override static func requiresMainQueueSetup() -> Bool { true }
+
+  override func view() -> UIView! {
+    return CardPayView()
   }
 }
