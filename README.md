@@ -218,7 +218,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import ApplePayView, { type SessionData, type ApiCallResult } from './ApplePayView';
 
-const publicKey = 'pk_sbox_...';
+const publicKey = 'pk_sbox_u57rqbpjsrmyjpyrycxk42jbnuz';
 
 async function handleSubmit(session: SessionData): Promise<ApiCallResult> {
     // Use session.sessionData to call your backend or Checkout API

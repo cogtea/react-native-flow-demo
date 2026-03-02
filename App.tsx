@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   Button,
+  ScrollView,
   StyleSheet,
   Platform,
   Text,
@@ -11,20 +12,27 @@ import {
 } from 'react-native';
 
 import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable } from './GooglePayView';
+import CardView from './CardView';
 import ApplePayView from './ApplePayView';
 
 const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any;
 
-let paymentSessionID = '';
-let paymentSessionToken = '';
-let paymentSessionSecret = '';
-let publicKey = 'pk_sbox_cwlkrqiyfrfceqz2ggxodhda2yh'; // Replace with your real public key
+let publicKey = 'pk_sbox_u57rqbpjsrmyjpyrycxk42jbnuz'; // Replace with your real public key
 const merchantIdentifier = 'merchant.com.joelle.flowmobile'; // Replace with your merchant ID
 
 function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
   const [showingFlow, setShowingFlow] = useState(false);
+  const [flowRenderKey, setFlowRenderKey] = useState(0);
+  const [paymentSession, setPaymentSession] = useState({
+    id: '',
+    token: '',
+    secret: '',
+  });
+  const isSessionReady =
+    paymentSession.id.trim().length > 0 &&
+    paymentSession.secret.trim().length > 0;
 
   const handleSubmit = async (sessionData: SessionData): Promise<ApiCallResult> => {
     setStatus('Submitting payment...');
@@ -37,10 +45,11 @@ function App(): React.JSX.Element {
 
       // Make the API call to checkout.com to submit the modified payment session
       // Using the raw session data from the SDK (not id/secret)
+      // IMPORTANT: Replace 'YOUR_SECRET_KEY' with your actual Checkout.com secret key
       const response = await fetch(`https://api.sandbox.checkout.com/payment-sessions/${sessionData.id}/submit`, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer sk_sbox_y5cec2mmqkclnwptusvh4wi7eax',
+          'Authorization': 'Bearer sk_sbox_dlqbu36qaj2ee76vso5vddm4vac',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -161,6 +170,14 @@ function App(): React.JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    if (!showingFlow || !isSessionReady) return;
+    const timer = setTimeout(() => {
+      setFlowRenderKey(prev => prev + 1);
+    }, 120);
+    return () => clearTimeout(timer);
+  }, [showingFlow, isSessionReady, paymentSession.id]);
+
 
 
   const startPayment = async () => {
@@ -170,21 +187,25 @@ function App(): React.JSX.Element {
     const googlePayAvailable = await isGooglePayAvailable();
     console.debug('[App] isGooglePayAvailable:', googlePayAvailable);
     try {
+      // IMPORTANT: Replace 'YOUR_SECRET_KEY' with your actual Checkout.com secret key
       const response = await fetch('https://api.sandbox.checkout.com/payment-sessions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer sk_sbox_y5cec2mmqkclnwptusvh4wi7eax',
+          'Authorization': 'Bearer sk_sbox_dlqbu36qaj2ee76vso5vddm4vac',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           amount: 1000,
           currency: 'AED',
           reference: 'ORD-123A',
-          processing_channel_id: 'pc_ticd6t2rrmnujacakafvukhbwu',
+          processing_channel_id: 'pc_6biffo54jgnufis4jenkhioawa',
           billing: {
             address: {
               country: 'AE',
             },
+          },
+          "3ds": {
+            enabled: true,
           },
           customer: {
             name: 'Jia Tsang',
@@ -206,9 +227,11 @@ function App(): React.JSX.Element {
       const data = await response.json();
       const { id, payment_session_token, payment_session_secret } = data;
 
-      paymentSessionID = id;
-      paymentSessionToken = payment_session_token;
-      paymentSessionSecret = payment_session_secret;
+      setPaymentSession({
+        id,
+        token: payment_session_token,
+        secret: payment_session_secret,
+      });
 
       setStatus('Payment flow started');
       setShowingFlow(true);
@@ -225,28 +248,52 @@ function App(): React.JSX.Element {
     <SafeAreaView style={styles.container}>
 
       {showingFlow ? (
-        Platform.OS === 'ios' ? (
-          <ApplePayView
-            style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
-            paymentSessionID={paymentSessionID}
-            paymentSessionToken={paymentSessionToken}
-            paymentSessionSecret={paymentSessionSecret}
-            publicKey={publicKey}
-            merchantIdentifier={merchantIdentifier}
-            environment="sandbox"
-            handleSubmit={handleSubmit}
-          />
-        ) : (
-          <GooglePayView
-            style={{ width: '100%', height: 60, position: 'absolute', bottom: 0 }}
-            paymentSessionID={paymentSessionID}
-            paymentSessionToken={paymentSessionToken}
-            paymentSessionSecret={paymentSessionSecret}
-            publicKey={publicKey}
-            environment="sandbox"
-            handleSubmit={handleSubmit}
-          />
-        )
+        <View style={styles.containerFlow}>
+          <ScrollView style={styles.flowContainer}>
+            <View style={styles.paymentMethodContainer}>
+              {isSessionReady ? (
+                <CardView
+                  key={`card-${flowRenderKey}`}
+                  style={styles.cardView}
+                  paymentSessionID={paymentSession.id}
+                  paymentSessionToken={paymentSession.token}
+                  paymentSessionSecret={paymentSession.secret}
+                  publicKey={publicKey}
+                  environment="sandbox"
+                  hasHandleSubmitListener={true}
+                  handleSubmit={handleSubmit}
+                />
+              ) : (
+                <View style={styles.loadingContainer}>
+                  <Text>Preparing payment form...</Text>
+                </View>
+              )}
+            </View>
+          </ScrollView>
+
+          {Platform.OS === 'ios' ? (
+            <ApplePayView
+              style={{ width: '100%', height: 60 }}
+              paymentSessionID={paymentSession.id}
+              paymentSessionToken={paymentSession.token}
+              paymentSessionSecret={paymentSession.secret}
+              publicKey={publicKey}
+              merchantIdentifier={merchantIdentifier}
+              environment="sandbox"
+              handleSubmit={handleSubmit}
+            />
+          ) : (
+            <GooglePayView
+              style={{ width: '100%', height: 60 }}
+              paymentSessionID={paymentSession.id}
+              paymentSessionToken={paymentSession.token}
+              paymentSessionSecret={paymentSession.secret}
+              publicKey={publicKey}
+              environment="sandbox"
+              handleSubmit={handleSubmit}
+            />
+          )}
+        </View>
       ) : (
         <>
           <Text style={styles.title}>Checkout.com Flow Demo</Text>
@@ -290,7 +337,17 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#c00' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20},
+  containerFlow: { flex: 1, width: '100%', backgroundColor: '#fff' },
+  flowContainer: { flex: 1, width: '100%' },
+  paymentMethodContainer: { padding: 20 },
+  cardView: { width: '100%', height: 400 },
+  loadingContainer: { 
+    height: 400, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    backgroundColor: '#f9f9f9',
+  },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
   statusContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   errorContainer: {

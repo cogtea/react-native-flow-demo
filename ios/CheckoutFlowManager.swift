@@ -9,7 +9,7 @@ class CheckoutFlowManager: RCTEventEmitter {
     private var checkoutComponents: CheckoutComponents?
     private var flowHostingController: UIHostingController<AnyView>?
 
-    private let publicKey = "pk_sbox_cwlkrqiyfrfceqz2ggxodhda2yh"
+    private let publicKey = "pk_sbox_u57rqbpjsrmyjpyrycxk42jbnuz"
     private let environment = CheckoutComponents.Environment.sandbox
 
     override static func requiresMainQueueSetup() -> Bool {
