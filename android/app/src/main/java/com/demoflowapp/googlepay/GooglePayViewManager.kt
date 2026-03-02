@@ -62,6 +62,11 @@ class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
         view.environment = env
     }
 
+    @ReactProp(name = "hasHandleSubmitListener")
+    fun setHasHandleSubmitListener(view: GooglePayView, value: Boolean) {
+        view.hasHandleSubmitListener = value
+    }
+
     // Note: handleSubmit callback is set directly on the view via direct method call
     // React Native @ReactProp doesn't support Callback type directly
 

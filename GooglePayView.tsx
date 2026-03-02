@@ -20,6 +20,7 @@ export interface GooglePayViewProps extends ViewProps {
   paymentSessionSecret?: string;
   publicKey?: string;
   handleSubmit?: (sessionData: SessionData) => Promise<ApiCallResult>;
+  hasHandleSubmitListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
 }
@@ -73,7 +74,7 @@ export const GooglePayView: React.FC<GooglePayViewProps> = (props) => {
   if (Platform.OS !== 'android' || !NativeGooglePayView) {
     return <View {...props} />;
   }
-  return <NativeGooglePayView {...otherProps} />;
+  return <NativeGooglePayView {...otherProps} hasHandleSubmitListener={!!handleSubmit} />;
 };
 
 /* -------------------------------------------------------

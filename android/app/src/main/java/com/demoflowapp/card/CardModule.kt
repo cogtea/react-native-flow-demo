@@ -12,7 +12,7 @@ class CardModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
         fun emitEvent(event: WritableMap) {
             reactContext?.let { ctx ->
                 ctx.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-                    ?.emit("onHandleSubmit", event)
+                    ?.emit("onCardHandleSubmit", event)
             }
         }
     }
@@ -22,6 +22,14 @@ class CardModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
     }
 
     override fun getName() = "CardModule"
+
+    @ReactMethod
+    fun addListener(eventName: String) {
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Int) {
+    }
 
     @ReactMethod
     fun handleSubmitResponse(requestId: String, success: Boolean, data: ReadableMap?) {

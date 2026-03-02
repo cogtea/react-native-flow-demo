@@ -47,6 +47,7 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
     private var currentSessionData: SessionData? = null
     private var pendingContinuations = mutableMapOf<String, kotlin.coroutines.Continuation<CustomApiCallResult>>()
     var environment: Environment = Environment.SANDBOX
+    var hasHandleSubmitListener: Boolean = false
 
     // --- START: ADDED FIX ---
     /**
@@ -159,101 +160,132 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
                 }
             )
 
-        val customComponentCallback =
-                ComponentCallback(
-                        onReady = { component ->
-                            if (BuildConfig.DEBUG) {
-                                Log.d("GooglePayView", "onReady: ${component.name}")
-                            }
-                        },
-                        handleSubmit = { sessionData ->
-                            try {
-                                currentSessionData?.let { baseSessionData ->
-                                    val sessionDataWithRaw = baseSessionData.copy(
-                                        sessionData = sessionData
-                                    )
-                                    
-                                    val result = kotlinx.coroutines.runBlocking {
-                                        this@GooglePayView.handleSubmit(sessionDataWithRaw)
-                                    }
-                                    
-                                    if (result.success) {
-                                        try {
-                                            val responseJson = result.data?.get("response") as? String ?: "{\"status\":\"success\"}"
-                                            
-                                            // Parse the JSON response to create PaymentSessionSubmissionResult
-                                            val jsonObject = JSONObject(responseJson)
-                                            val id = jsonObject.getString("id")
-                                            val status = jsonObject.getString("status")
-                                            val type = jsonObject.optString("type", "googlepay") // Default to googlepay
-                                            
-                                            // Parse action if present
-                                            val action = if (jsonObject.has("action")) {
-                                                val actionObject = jsonObject.getJSONObject("action")
-                                                PaymentAction(
-                                                    type = actionObject.getString("type"),
-                                                    url = if (actionObject.has("url")) actionObject.getString("url") else null
-                                                )
-                                            } else null
-                                            
-                                            // Create the proper PaymentSessionSubmissionResult
-                                            val submissionResult = PaymentSessionSubmissionResult(
-                                                id = id,
-                                                type = type,
-                                                status = status,
-                                                action = action,
-                                                declineReason = null
+        val customComponentCallback = if (hasHandleSubmitListener) {
+            ComponentCallback(
+                    onReady = { component ->
+                        if (BuildConfig.DEBUG) {
+                            Log.d("GooglePayView", "onReady: ${component.name}")
+                        }
+                    },
+                    handleSubmit = { sessionData ->
+                        try {
+                            currentSessionData?.let { baseSessionData ->
+                                val sessionDataWithRaw = baseSessionData.copy(
+                                    sessionData = sessionData
+                                )
+
+                                val result = kotlinx.coroutines.runBlocking {
+                                    this@GooglePayView.handleSubmit(sessionDataWithRaw)
+                                }
+
+                                if (result.success) {
+                                    try {
+                                        val responseJson = result.data?.get("response") as? String ?: "{\"status\":\"success\"}"
+
+                                        val jsonObject = JSONObject(responseJson)
+                                        val id = jsonObject.getString("id")
+                                        val status = jsonObject.getString("status")
+                                        val type = jsonObject.optString("type", "googlepay")
+
+                                        val action = if (jsonObject.has("action")) {
+                                            val actionObject = jsonObject.getJSONObject("action")
+                                            PaymentAction(
+                                                type = actionObject.getString("type"),
+                                                url = if (actionObject.has("url")) actionObject.getString("url") else null
                                             )
-                                            
-                                            Log.d("GooglePayView", "✅ Created PaymentSessionSubmissionResult: id=$id, status=$status, type=$type")
-                                            if (action != null) {
-                                                if (BuildConfig.DEBUG) {
-                                                    Log.d("GooglePayView", "➡️ Action required: type=${action.type}, url=${action.url}")
-                                                }
-                                            }
-                                            
-                                            ApiCallResult.Success(submissionResult)
-                                        } catch (e: Exception) {
-                                            Log.e("GooglePayView", "Error parsing response JSON", e)
-                                            ApiCallResult.Failure
+                                        } else null
+
+                                        val submissionResult = PaymentSessionSubmissionResult(
+                                            id = id,
+                                            type = type,
+                                            status = status,
+                                            action = action,
+                                            declineReason = null
+                                        )
+
+                                        Log.d("GooglePayView", "✅ Created PaymentSessionSubmissionResult: id=$id, status=$status, type=$type")
+                                        if (action != null && BuildConfig.DEBUG) {
+                                            Log.d("GooglePayView", "➡️ Action required: type=${action.type}, url=${action.url}")
                                         }
-                                    } else {
+
+                                        ApiCallResult.Success(submissionResult)
+                                    } catch (e: Exception) {
+                                        Log.e("GooglePayView", "Error parsing response JSON", e)
                                         ApiCallResult.Failure
                                     }
-                                } ?: ApiCallResult.Failure
-                            } catch (e: Exception) {
-                                Log.e("GooglePayView", "Error in handleSubmit", e)
-                                ApiCallResult.Failure
-                            }
-                        },
-                        onSuccess = { component, paymentID ->
-                            if (BuildConfig.DEBUG) {
-                                Log.d("GooglePayView", "onSuccess: ${component.name}, $paymentID")
-                            }
-                            val map =
-                                    Arguments.createMap().apply {
-                                        putString("component", component::class.java.simpleName)
-                                        putString("paymentId", paymentID)
-                                    }
-                            sendEvent("onFlowPaymentSuccess", map)
-                        },
-                        onError = { component, checkoutError ->
-                            Log.e(
-                                    "GooglePayView",
-                                    "onError: ${checkoutError.message}, ${checkoutError.code}"
-                            )
-                            val map =
-                                    Arguments.createMap().apply {
-                                        putString("component", component::class.java.simpleName)
-                                        putString(
-                                                "errorMessage",
-                                                checkoutError.message
-                                        )
-                                        putString("errorCode", checkoutError.code.toString())
-                                    }
-                            sendEvent("onFlowPaymentError", map)
+                                } else {
+                                    ApiCallResult.Failure
+                                }
+                            } ?: ApiCallResult.Failure
+                        } catch (e: Exception) {
+                            Log.e("GooglePayView", "Error in handleSubmit", e)
+                            ApiCallResult.Failure
                         }
-                )
+                    },
+                    onSuccess = { component, paymentID ->
+                        if (BuildConfig.DEBUG) {
+                            Log.d("GooglePayView", "onSuccess: ${component.name}, $paymentID")
+                        }
+                        val map =
+                                Arguments.createMap().apply {
+                                    putString("component", component::class.java.simpleName)
+                                    putString("paymentId", paymentID)
+                                }
+                        sendEvent("onFlowPaymentSuccess", map)
+                    },
+                    onError = { component, checkoutError ->
+                        Log.e(
+                                "GooglePayView",
+                                "onError: ${checkoutError.message}, ${checkoutError.code}"
+                        )
+                        val map =
+                                Arguments.createMap().apply {
+                                    putString("component", component::class.java.simpleName)
+                                    putString(
+                                            "errorMessage",
+                                            checkoutError.message
+                                    )
+                                    putString("errorCode", checkoutError.code.toString())
+                                }
+                        sendEvent("onFlowPaymentError", map)
+                    }
+            )
+        } else {
+            ComponentCallback(
+                    onReady = { component ->
+                        if (BuildConfig.DEBUG) {
+                            Log.d("GooglePayView", "onReady: ${component.name}")
+                        }
+                    },
+                    onSuccess = { component, paymentID ->
+                        if (BuildConfig.DEBUG) {
+                            Log.d("GooglePayView", "onSuccess: ${component.name}, $paymentID")
+                        }
+                        val map =
+                                Arguments.createMap().apply {
+                                    putString("component", component::class.java.simpleName)
+                                    putString("paymentId", paymentID)
+                                }
+                        sendEvent("onFlowPaymentSuccess", map)
+                    },
+                    onError = { component, checkoutError ->
+                        Log.e(
+                                "GooglePayView",
+                                "onError: ${checkoutError.message}, ${checkoutError.code}"
+                        )
+                        val map =
+                                Arguments.createMap().apply {
+                                    putString("component", component::class.java.simpleName)
+                                    putString(
+                                            "errorMessage",
+                                            checkoutError.message
+                                    )
+                                    putString("errorCode", checkoutError.code.toString())
+                                }
+                        sendEvent("onFlowPaymentError", map)
+                    }
+            )
+        }
 
     val configuration =
         CheckoutComponentConfiguration(

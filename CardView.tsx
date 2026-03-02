@@ -26,6 +26,7 @@ export interface CardViewProps extends ViewProps {
 }
 
 const { CardModule } = NativeModules;
+const CARD_HANDLE_SUBMIT_EVENT = 'onCardHandleSubmit';
 
 // Native component name must match the one returned by the Android ViewManager: RNCardView
 const VIEW_NAME = 'RNCardView';
@@ -43,7 +44,7 @@ export const CardView: React.FC<CardViewProps> = (props) => {
 
     const eventEmitter = new NativeEventEmitter(CardModule);
 
-    const subscription = eventEmitter.addListener('onHandleSubmit', async (event) => {
+    const subscription = eventEmitter.addListener(CARD_HANDLE_SUBMIT_EVENT, async (event) => {
       const { sessionData } = event;
       const { requestId, id, secret, sessionData: rawSessionData } = sessionData;
 

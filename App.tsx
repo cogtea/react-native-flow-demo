@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   Button,
@@ -34,7 +34,7 @@ function App(): React.JSX.Element {
     paymentSession.id.trim().length > 0 &&
     paymentSession.secret.trim().length > 0;
 
-  const handleSubmit = async (sessionData: SessionData): Promise<ApiCallResult> => {
+  const handleSubmit = useCallback(async (sessionData: SessionData): Promise<ApiCallResult> => {
     setStatus('Submitting payment...');
     try {
       console.debug('[App] handleSubmit called', { id: sessionData.id, hasSessionData: !!sessionData.sessionData });
@@ -68,12 +68,12 @@ function App(): React.JSX.Element {
       if (response.ok) {
         if (responseData.status === 'Action Required' && responseData.action?.type === '3ds') {
           setStatus('3DS Authentication required...');
+          setShowingFlow(true);
         } else {
           setStatus(`Success: ${responseData.id || 'Payment completed'}`);
+          setShowingFlow(false);
         }
-        // Hide the flow after handling submit (success path)
         setError(null);
-        setShowingFlow(false);
 
         return {
           success: true,
@@ -87,7 +87,6 @@ function App(): React.JSX.Element {
       } else {
         setStatus('Error');
         setError(`Payment failed: ${responseData.message || JSON.stringify(responseData) || 'Unknown error'}`);
-        // Hide the flow on error as well
         setShowingFlow(false);
         return {
           success: false,
@@ -97,14 +96,13 @@ function App(): React.JSX.Element {
     } catch (error) {
       setStatus('Error');
       setError(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      // Ensure the flow is hidden if an exception occurs
       setShowingFlow(false);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Subscribe to success/error from platform-native modules
@@ -249,6 +247,33 @@ function App(): React.JSX.Element {
 
       {showingFlow ? (
         <View style={styles.containerFlow}>
+          {/* GooglePay/ApplePay button on top */}
+          <View style={styles.payButtonContainer}>
+            {Platform.OS === 'ios' ? (
+              <ApplePayView
+                style={{ width: '100%', height: 60 }}
+                paymentSessionID={paymentSession.id}
+                paymentSessionToken={paymentSession.token}
+                paymentSessionSecret={paymentSession.secret}
+                publicKey={publicKey}
+                merchantIdentifier={merchantIdentifier}
+                environment="sandbox"
+                handleSubmit={handleSubmit}
+              />
+            ) : (
+              <GooglePayView
+                style={{ width: '100%', height: 60 }}
+                paymentSessionID={paymentSession.id}
+                paymentSessionToken={paymentSession.token}
+                paymentSessionSecret={paymentSession.secret}
+                publicKey={publicKey}
+                environment="sandbox"
+                handleSubmit={handleSubmit}
+              />
+            )}
+          </View>
+
+          {/* Card form below in ScrollView */}
           <ScrollView style={styles.flowContainer}>
             <View style={styles.paymentMethodContainer}>
               {isSessionReady ? (
@@ -270,29 +295,6 @@ function App(): React.JSX.Element {
               )}
             </View>
           </ScrollView>
-
-          {Platform.OS === 'ios' ? (
-            <ApplePayView
-              style={{ width: '100%', height: 60 }}
-              paymentSessionID={paymentSession.id}
-              paymentSessionToken={paymentSession.token}
-              paymentSessionSecret={paymentSession.secret}
-              publicKey={publicKey}
-              merchantIdentifier={merchantIdentifier}
-              environment="sandbox"
-              handleSubmit={handleSubmit}
-            />
-          ) : (
-            <GooglePayView
-              style={{ width: '100%', height: 60 }}
-              paymentSessionID={paymentSession.id}
-              paymentSessionToken={paymentSession.token}
-              paymentSessionSecret={paymentSession.secret}
-              publicKey={publicKey}
-              environment="sandbox"
-              handleSubmit={handleSubmit}
-            />
-          )}
         </View>
       ) : (
         <>
@@ -339,6 +341,12 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20},
   containerFlow: { flex: 1, width: '100%', backgroundColor: '#fff' },
+  payButtonContainer: { 
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
   flowContainer: { flex: 1, width: '100%' },
   paymentMethodContainer: { padding: 20 },
   cardView: { width: '100%', height: 400 },

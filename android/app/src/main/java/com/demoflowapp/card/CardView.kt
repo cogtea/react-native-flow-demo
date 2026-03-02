@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
+import java.util.UUID
 
 // Create our own data classes that match the expected signature from Checkout.com docs
 data class SessionData(
@@ -85,6 +86,7 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
      * Called from JavaScript with the API response after payment submission
      */
     fun handleSubmitResponse(requestId: String, success: Boolean, data: ReadableMap?) {
+        CardViewRegistry.unregisterView(requestId)
         val continuation = pendingContinuations.remove(requestId)
         if (continuation != null) {
             val result = if (success && data != null) {
@@ -108,8 +110,9 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
      */
     private suspend fun handleSubmit(sessionData: SessionData): CustomApiCallResult {
         return suspendCancellableCoroutine { continuation ->
-            val requestId = sessionData.id // Use session ID as unique request ID
+            val requestId = UUID.randomUUID().toString()
             pendingContinuations[requestId] = continuation
+            CardViewRegistry.registerView(requestId, this)
             
             // Emit event to JavaScript
             val eventData = Arguments.createMap().apply {
