@@ -8,4 +8,8 @@ RCT_EXTERN_METHOD(handleSubmitResponse:(NSString *)requestId
                   success:(BOOL)success
                   data:(NSDictionary *)data)
 
+RCT_EXTERN_METHOD(submit:(NSString *)paymentSessionID
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end

@@ -8,6 +8,7 @@ RCT_EXPORT_VIEW_PROPERTY(publicKey, NSString)
 RCT_EXPORT_VIEW_PROPERTY(merchantIdentifier, NSString)
 RCT_EXPORT_VIEW_PROPERTY(environment, NSString)
 RCT_EXPORT_VIEW_PROPERTY(paymentMethod, NSString)
+RCT_EXPORT_VIEW_PROPERTY(showPayButton, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(hasHandleSubmitListener, BOOL)
 
 @end

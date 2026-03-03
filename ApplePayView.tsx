@@ -6,6 +6,7 @@ import {
   View,
   NativeEventEmitter,
   NativeModules,
+  NativeModule,
 } from 'react-native';
 
 export interface SessionData {
@@ -27,13 +28,28 @@ export interface ApplePayViewProps extends ViewProps {
   paymentSessionSecret?: string;
   publicKey?: string;
   merchantIdentifier?: string; // iOS Apple Pay merchant ID
+  showPayButton?: boolean;
   handleSubmit?: (sessionData: SessionData) => Promise<ApiCallResult>;
   hasHandleSubmitListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
 }
 
-const { ApplePayModule } = NativeModules as { ApplePayModule?: any };
+type ApplePayNativeModule = {
+  handleSubmitResponse: (requestId: string, success: boolean, data?: Record<string, any>) => void;
+  submit?: (paymentSessionID: string) => Promise<{ success: boolean }>;
+  addListener?: (eventName: string) => void;
+  removeListeners?: (count: number) => void;
+};
+
+const { ApplePayModule } = NativeModules as { ApplePayModule?: ApplePayNativeModule };
+
+export const submitApplePay = (paymentSessionID: string): Promise<{ success: boolean }> => {
+  if (Platform.OS !== 'ios' || !ApplePayModule?.submit) {
+    return Promise.reject(new Error('ApplePay submit is only available on iOS with native module loaded'));
+  }
+  return ApplePayModule.submit(paymentSessionID);
+};
 
 // Native component name must match the iOS ViewManager: RNApplePayView
 const VIEW_NAME = 'RNApplePayView';
@@ -52,7 +68,7 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
     // Bridge event to receive submit requests from native
     if (Platform.OS !== 'ios' || !handleSubmit || !ApplePayModule) return;
 
-    const eventEmitter = new NativeEventEmitter(ApplePayModule);
+    const eventEmitter = new NativeEventEmitter(ApplePayModule as NativeModule);
     const subscription = eventEmitter.addListener('onHandleSubmit', async (event) => {
       const { sessionData } = event;
       const { component, requestId, id, secret, sessionData: rawSessionData } = sessionData ?? {};

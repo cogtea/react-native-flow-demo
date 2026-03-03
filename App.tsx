@@ -7,13 +7,14 @@ import {
   Platform,
   Text,
   View,
+  Pressable,
   NativeEventEmitter,
   NativeModules,
 } from 'react-native';
 
 import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable } from './GooglePayView';
 import CardView from './CardView';
-import ApplePayView from './ApplePayView';
+import ApplePayView, { submitApplePay } from './ApplePayView';
 
 const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any;
 
@@ -23,6 +24,7 @@ const merchantIdentifier = 'merchant.com.joelle.flowmobile'; // Replace with you
 function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
+  const [isApplePayJsButtonDisabled, setIsApplePayJsButtonDisabled] = useState(false);
   const [showingFlow, setShowingFlow] = useState(false);
   const [flowRenderKey, setFlowRenderKey] = useState(0);
   const [paymentSession, setPaymentSession] = useState({
@@ -230,6 +232,7 @@ function App(): React.JSX.Element {
         token: payment_session_token,
         secret: payment_session_secret,
       });
+      setIsApplePayJsButtonDisabled(false);
 
       setStatus('Payment flow started');
       setShowingFlow(true);
@@ -242,6 +245,29 @@ function App(): React.JSX.Element {
     }
   };
 
+  const submitApplePayFromJS = async () => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+
+    if (!paymentSession.id) {
+      setStatus('Error');
+      setError('No payment session available for Apple Pay submit');
+      return;
+    }
+
+    try {
+      setIsApplePayJsButtonDisabled(true);
+      setStatus('Submitting Apple Pay from JS...');
+      await submitApplePay(paymentSession.id);
+      setStatus('Apple Pay submit requested');
+      setError(null);
+    } catch (submitError) {
+      setStatus('Error');
+      setError(`Apple Pay submit error: ${submitError instanceof Error ? submitError.message : String(submitError)}`);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
 
@@ -250,16 +276,32 @@ function App(): React.JSX.Element {
           {/* GooglePay/ApplePay button on top */}
           <View style={styles.payButtonContainer}>
             {Platform.OS === 'ios' ? (
-              <ApplePayView
-                style={{ width: '100%', height: 60 }}
-                paymentSessionID={paymentSession.id}
-                paymentSessionToken={paymentSession.token}
-                paymentSessionSecret={paymentSession.secret}
-                publicKey={publicKey}
-                merchantIdentifier={merchantIdentifier}
-                environment="sandbox"
-                handleSubmit={handleSubmit}
-              />
+              <View style={styles.iosApplePayContainer}>
+                <ApplePayView
+                  style={{ width: '100%', height: 60 }}
+                  paymentSessionID={paymentSession.id}
+                  paymentSessionToken={paymentSession.token}
+                  paymentSessionSecret={paymentSession.secret}
+                  publicKey={publicKey}
+                  merchantIdentifier={merchantIdentifier}
+                  environment="sandbox"
+                  showPayButton={false}
+                  handleSubmit={handleSubmit}
+                />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.applePayBrandButton,
+                    isApplePayJsButtonDisabled && styles.applePayBrandButtonDisabled,
+                    pressed && styles.applePayBrandButtonPressed,
+                  ]}
+                  onPress={submitApplePayFromJS}
+                  disabled={isApplePayJsButtonDisabled}
+                  accessibilityRole="button"
+                  accessibilityLabel="Apple Pay"
+                >
+                  <Text style={styles.applePayBrandText}> Pay</Text>
+                </Pressable>
+              </View>
             ) : (
               <GooglePayView
                 style={{ width: '100%', height: 60 }}
@@ -346,6 +388,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  iosApplePayContainer: {
+    width: '100%',
+    gap: 12,
+  },
+  applePayBrandButton: {
+    height: 50,
+    borderRadius: 10,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applePayBrandButtonPressed: {
+    opacity: 0.85,
+  },
+  applePayBrandButtonDisabled: {
+    opacity: 0.45,
+  },
+  applePayBrandText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
   },
   flowContainer: { flex: 1, width: '100%' },
   paymentMethodContainer: { padding: 20 },

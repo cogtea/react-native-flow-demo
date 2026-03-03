@@ -12,11 +12,13 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
   @objc var merchantIdentifier: NSString? { didSet { maybeInitialize() } }
   @objc var environment: NSString? { didSet { maybeInitialize() } }
   @objc var paymentMethod: NSString? { didSet { maybeInitialize() } }
+  @objc var showPayButton: Bool = true { didSet { maybeInitialize() } }
   @objc var hasHandleSubmitListener: Bool = false { didSet { maybeInitialize() } }
 
   // MARK: - Private state
   private var hasInitialized = false
   private var checkoutComponents: CheckoutComponents?
+  private var submittableComponent: (any CheckoutComponents.Submittable)?
   private var hostingController: UIHostingController<AnyView>?
   private weak var parentViewControllerRef: UIViewController?
   private var pendingContinuations: [String: CheckedContinuation<CheckoutComponents.APICallResult, Never>] = [:]
@@ -64,12 +66,22 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
                                              submitData: submitData)
       } : nil
 
+      let shouldShowApplePayButton = showPayButton
+
       let callbacks = CheckoutComponents.Callbacks(
         onReady: { paymentMethod in
           NSLog("ApplePayView onReady: \(paymentMethod.name)")
         },
-        handleTap: { _ async -> Bool in true },
-        onChange: { _ in },
+        handleTap: { component in
+          if shouldShowApplePayButton,
+             let submittable = component as? any CheckoutComponents.Submittable {
+            submittable.submit()
+          }
+          return true
+        },
+        onChange: { [weak self] component in
+          self?.submittableComponent = component
+        },
         onSubmit: { _ in },
         handleSubmit: handleSubmitCallback,
         onSuccess: { [weak self] paymentMethod, paymentID in
@@ -119,7 +131,10 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
       } else {
         let mId = (merchantIdentifier as String?) ?? "merchant.com.flow.checkout.sandbox"
         component = try checkoutComponents!.create(.applePay(merchantIdentifier: mId,
-                             showPayButton: true))
+                             showPayButton: shouldShowApplePayButton))
+      }
+      if let submittable = component as? any CheckoutComponents.Submittable {
+        submittableComponent = submittable
       }
 
       // If the SDK reports the component as unavailable, notify JS and don't render
@@ -264,5 +279,32 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
     } else {
       continuation.resume(returning: .failure)
     }
+  }
+
+  @MainActor
+  func submitFromJS() -> Bool {
+    guard let component = submittableComponent else {
+      NSLog("ApplePayView submitFromJS: no submittable component available")
+      self.emit(name: "onFlowPaymentError", body: [
+        "component": "ApplePay",
+        "errorMessage": "Apple Pay component is not ready yet",
+        "errorCode": "NOT_READY"
+      ])
+      return false
+    }
+
+    if component.isValid == false {
+      NSLog("ApplePayView submitFromJS: component is not valid")
+      self.emit(name: "onFlowPaymentError", body: [
+        "component": "ApplePay",
+        "errorMessage": "Apple Pay component is not valid",
+        "errorCode": "INVALID"
+      ])
+      return false
+    }
+
+    NSLog("ApplePayView submitFromJS: calling component.submit()")
+    component.submit()
+    return true
   }
 }
