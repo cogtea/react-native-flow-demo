@@ -12,7 +12,7 @@ import {
   NativeModules,
 } from 'react-native';
 
-import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable, submitGooglePay } from './GooglePayView';
+import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable } from './GooglePayView';
 import CardView from './CardView';
 import ApplePayView, { submitApplePay } from './ApplePayView';
 
@@ -25,7 +25,6 @@ function App(): React.JSX.Element {
   const [status, setStatus] = useState('Ready');
   const [error, setError] = useState<string | null>(null);
   const [isApplePayJsButtonDisabled, setIsApplePayJsButtonDisabled] = useState(false);
-  const [isGooglePayJsButtonDisabled, setIsGooglePayJsButtonDisabled] = useState(false);
   const [showingFlow, setShowingFlow] = useState(false);
   const [flowRenderKey, setFlowRenderKey] = useState(0);
   const [paymentSession, setPaymentSession] = useState({
@@ -234,7 +233,6 @@ function App(): React.JSX.Element {
         secret: payment_session_secret,
       });
       setIsApplePayJsButtonDisabled(false);
-      setIsGooglePayJsButtonDisabled(false);
 
       setStatus('Payment flow started');
       setShowingFlow(true);
@@ -267,34 +265,6 @@ function App(): React.JSX.Element {
     } catch (submitError) {
       setStatus('Error');
       setError(`Apple Pay submit error: ${submitError instanceof Error ? submitError.message : String(submitError)}`);
-    }
-  };
-
-  const submitGooglePayFromJS = async () => {
-    if (Platform.OS !== 'android') {
-      return;
-    }
-
-    if (!paymentSession.id) {
-      setStatus('Error');
-      setError('No payment session available for Google Pay submit');
-      return;
-    }
-
-    try {
-      setIsGooglePayJsButtonDisabled(true);
-      setStatus('Submitting Google Pay from JS...');
-      const submitted = await submitGooglePay(paymentSession.id);
-      if (submitted) {
-        setStatus('Google Pay submit requested');
-        setError(null);
-      } else {
-        setStatus('Error');
-        setError('Google Pay component is not ready');
-      }
-    } catch (submitError) {
-      setStatus('Error');
-      setError(`Google Pay submit error: ${submitError instanceof Error ? submitError.message : String(submitError)}`);
     }
   };
 
@@ -333,31 +303,15 @@ function App(): React.JSX.Element {
                 </Pressable>
               </View>
             ) : (
-              <View style={styles.iosApplePayContainer}>
-                <GooglePayView
-                  style={{ width: '100%', height: 60 }}
-                  paymentSessionID={paymentSession.id}
-                  paymentSessionToken={paymentSession.token}
-                  paymentSessionSecret={paymentSession.secret}
-                  publicKey={publicKey}
-                  environment="sandbox"
-                  showPayButton={false}
-                  handleSubmit={handleSubmit}
-                />
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.googlePayBrandButton,
-                    isGooglePayJsButtonDisabled && styles.googlePayBrandButtonDisabled,
-                    pressed && styles.googlePayBrandButtonPressed,
-                  ]}
-                  onPress={submitGooglePayFromJS}
-                  disabled={isGooglePayJsButtonDisabled}
-                  accessibilityRole="button"
-                  accessibilityLabel="Google Pay"
-                >
-                  <Text style={styles.googlePayBrandText}>G Pay</Text>
-                </Pressable>
-              </View>
+              <GooglePayView
+                style={{ width: '100%', height: 60 }}
+                paymentSessionID={paymentSession.id}
+                paymentSessionToken={paymentSession.token}
+                paymentSessionSecret={paymentSession.secret}
+                publicKey={publicKey}
+                environment="sandbox"
+                handleSubmit={handleSubmit}
+              />
             )}
           </View>
 
@@ -374,7 +328,7 @@ function App(): React.JSX.Element {
                   publicKey={publicKey}
                   environment="sandbox"
                   hasHandleSubmitListener={true}
-                  handleSubmit={handleSubmit}
+                  //handleSubmit={handleSubmit}
                 />
               ) : (
                 <View style={styles.loadingContainer}>
@@ -453,24 +407,6 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   applePayBrandText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  googlePayBrandButton: {
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googlePayBrandButtonPressed: {
-    opacity: 0.85,
-  },
-  googlePayBrandButtonDisabled: {
-    opacity: 0.45,
-  },
-  googlePayBrandText: {
     color: '#fff',
     fontSize: 20,
     fontWeight: '600',
