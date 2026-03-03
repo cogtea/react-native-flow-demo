@@ -67,6 +67,11 @@ class GooglePayViewManager : SimpleViewManager<GooglePayView>() {
         view.hasHandleSubmitListener = value
     }
 
+    @ReactProp(name = "showPayButton")
+    fun setShowPayButton(view: GooglePayView, value: Boolean) {
+        view.showPayButton = value
+    }
+
     // Note: handleSubmit callback is set directly on the view via direct method call
     // React Native @ReactProp doesn't support Callback type directly
 

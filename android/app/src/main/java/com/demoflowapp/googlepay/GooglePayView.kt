@@ -42,12 +42,15 @@ data class CustomApiCallResult(
 
 class GooglePayView(context: Context, private val reactApplicationContext: ReactApplicationContext) : FrameLayout(context) {
     private var checkoutComponents: CheckoutComponents? = null
+    private var googlePayComponent: Any? = null
     private var googlePayCoordinator: GooglePayFlowCoordinator? = null
     private var hasInitialized = false
+    private var paymentSessionID: String? = null
     private var currentSessionData: SessionData? = null
     private var pendingContinuations = mutableMapOf<String, kotlin.coroutines.Continuation<CustomApiCallResult>>()
     var environment: Environment = Environment.SANDBOX
     var hasHandleSubmitListener: Boolean = false
+    var showPayButton: Boolean = true
 
     // --- START: ADDED FIX ---
     /**
@@ -74,6 +77,11 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
         super.requestLayout()
         // Post the layout runnable to force a re-layout in RN's context
         post(mLayoutRunnable)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        paymentSessionID?.let { GooglePayViewRegistry.unregisterView(it) }
     }
     // --- END: ADDED FIX ---
     
@@ -132,6 +140,7 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
         hasInitialized = true
         
         // Store session data for handleSubmit functionality
+        this.paymentSessionID = paymentSessionID
         currentSessionData = SessionData(paymentSessionID, paymentSessionSecret)
         
         // Register this view with the registry
@@ -305,44 +314,72 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 checkoutComponents = CheckoutComponentsFactory(config = configuration).create()
-                val googlePayComponent = checkoutComponents!!.create(PaymentMethodName.GooglePay)
+                googlePayComponent = checkoutComponents!!.create(PaymentMethodName.GooglePay)
                 if (BuildConfig.DEBUG) {
-                    Log.d("IsAvailable", googlePayComponent.isAvailable().toString())
-                }
-                val view = googlePayComponent.provideView(this@GooglePayView)
-                if (BuildConfig.DEBUG) {
-                    Log.d("GooglePayView", "View provided successfully")
+                    val isAvailableMethod = googlePayComponent?.javaClass?.methods?.firstOrNull { it.name == "isAvailable" && it.parameterCount == 0 }
+                    val isAvailableValue = isAvailableMethod?.invoke(googlePayComponent)
+                    Log.d("GooglePayView", "isAvailable=$isAvailableValue")
                 }
 
-                val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-                view.layoutParams = lp
-
-                try {
-                    view.setBackgroundColor(0x20EC5E5E) // translucent tint
-                } catch (t: Throwable) {
-                    // ignore
-                }
-
-                // Your logic here is fine.
-                // The `addView(view)` call inside the `post` block
-                // will now trigger your overridden `requestLayout()`,
-                // which will then post the `mLayoutRunnable` and fix the UI.
                 this@GooglePayView.removeAllViews()
-                this@GooglePayView.post {
-                    try {
-                        addView(view)
-                        // These calls below are not strictly necessary anymore,
-                        // as addView() will trigger our fix, but they don't hurt.
-                        view.requestLayout()
-                        this@GooglePayView.requestLayout()
-                        this@GooglePayView.invalidate()
-                    } catch (t: Throwable) {
-                        Log.e("GooglePayView", "Error attaching Google Pay child view", t)
+                if (showPayButton) {
+                    val provideViewMethod = googlePayComponent?.javaClass?.methods?.firstOrNull {
+                        it.name == "provideView" && it.parameterCount == 1
+                    }
+                    val view = provideViewMethod?.invoke(googlePayComponent, this@GooglePayView) as? android.view.View
+                    if (view != null) {
+                        if (BuildConfig.DEBUG) {
+                            Log.d("GooglePayView", "View provided successfully")
+                        }
+
+                        val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+                        view.layoutParams = lp
+
+                        this@GooglePayView.post {
+                            try {
+                                addView(view)
+                                view.requestLayout()
+                                this@GooglePayView.requestLayout()
+                                this@GooglePayView.invalidate()
+                            } catch (t: Throwable) {
+                                Log.e("GooglePayView", "Error attaching Google Pay child view", t)
+                            }
+                        }
                     }
                 }
             } catch (e: CheckoutError) {
                 Log.e("GooglePayView", "Error creating Google Pay component", e)
             }
+        }
+    }
+
+    fun submitFromJS(): Boolean {
+        return try {
+            val submitMethod = googlePayComponent?.javaClass?.methods?.firstOrNull {
+                it.name == "submit" && it.parameterCount == 0
+            }
+
+            if (submitMethod == null) {
+                val errorMap = Arguments.createMap().apply {
+                    putString("component", "GooglePay")
+                    putString("errorMessage", "Google Pay component is not ready")
+                    putString("errorCode", "NOT_READY")
+                }
+                sendEvent("onFlowPaymentError", errorMap)
+                return false
+            }
+
+            submitMethod.invoke(googlePayComponent)
+            true
+        } catch (e: Exception) {
+            Log.e("GooglePayView", "Error calling submit from JS", e)
+            val errorMap = Arguments.createMap().apply {
+                putString("component", "GooglePay")
+                putString("errorMessage", e.message ?: "Unknown error")
+                putString("errorCode", "SUBMIT_ERROR")
+            }
+            sendEvent("onFlowPaymentError", errorMap)
+            false
         }
     }
 }

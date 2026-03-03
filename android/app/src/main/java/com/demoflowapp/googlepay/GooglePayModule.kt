@@ -68,6 +68,16 @@ class GooglePayModule(reactContext: ReactApplicationContext) : ReactContextBaseJ
             android.util.Log.e("GooglePayModule", "❌ Error calling GooglePayViewRegistry.handleSubmitResponse", e)
         }
     }
+
+    @ReactMethod
+    fun submit(paymentSessionID: String, promise: Promise) {
+        try {
+            val submitted = GooglePayViewRegistry.submit(paymentSessionID)
+            promise.resolve(submitted)
+        } catch (e: Exception) {
+            promise.reject("E_SUBMIT_ERROR", e.message, e)
+        }
+    }
 }
 
 
@@ -96,5 +106,14 @@ object GooglePayViewRegistry {
             }
             view.handleSubmitResponse(requestId, success, data)
         }
+    }
+
+    fun submit(sessionId: String): Boolean {
+        val direct = views[sessionId]
+        if (direct != null) {
+            return direct.submitFromJS()
+        }
+
+        return views.values.firstOrNull()?.submitFromJS() ?: false
     }
 }

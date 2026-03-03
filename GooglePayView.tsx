@@ -19,6 +19,7 @@ export interface GooglePayViewProps extends ViewProps {
   paymentSessionToken?: string;
   paymentSessionSecret?: string;
   publicKey?: string;
+  showPayButton?: boolean;
   handleSubmit?: (sessionData: SessionData) => Promise<ApiCallResult>;
   hasHandleSubmitListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
@@ -91,6 +92,21 @@ export async function isGooglePayAvailable(): Promise<boolean> {
     return await GooglePayModule.isGooglePayAvailable();
   } catch (e) {
     console.warn('Google Pay availability check error:', e);
+    return false;
+  }
+}
+
+export async function submitGooglePay(paymentSessionID: string): Promise<boolean> {
+  if (Platform.OS !== 'android') return false;
+
+  try {
+    if (!GooglePayModule || !GooglePayModule.submit) {
+      console.warn('GooglePayModule.submit is not implemented natively.');
+      return false;
+    }
+    return await GooglePayModule.submit(paymentSessionID);
+  } catch (e) {
+    console.warn('Google Pay submit error:', e);
     return false;
   }
 }
