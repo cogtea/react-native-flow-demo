@@ -205,7 +205,7 @@ function App(): React.JSX.Element {
             },
           },
           "3ds": {
-            enabled: false,
+            enabled: true,
           },
           customer: {
             name: 'Jia Tsang',
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   flowContainer: { flex: 1, width: '100%' },
   paymentMethodContainer: { padding: 20 },
-  cardView: { width: '100%', height: 400 },
+  cardView: { width: '100%', height: 700 },
   loadingContainer: { 
     height: 400, 
     alignItems: 'center', 

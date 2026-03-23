@@ -316,13 +316,6 @@ class GooglePayView(context: Context, private val reactApplicationContext: React
 
                 val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
                 view.layoutParams = lp
-
-                try {
-                    view.setBackgroundColor(0x20EC5E5E) // translucent tint
-                } catch (t: Throwable) {
-                    // ignore
-                }
-
                 // Your logic here is fine.
                 // The `addView(view)` call inside the `post` block
                 // will now trigger your overridden `requestLayout()`,

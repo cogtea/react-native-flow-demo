@@ -111,7 +111,7 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation("com.checkout:checkout-android-components:1.0.4")
+    implementation("com.checkout:checkout-android-components:1.6.0")
     // implementation "com.checkout:checkout-android-components:1.0.0-beta-1"
 
     // Compose BOM for consistent versions (required for FlowRow support)

@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/checkout/checkout-ios-components",
       "state" : {
-        "revision" : "ca5cabd991ba13ae35a34b7dc75a8043f5082040",
-        "version" : "1.2.5"
+        "revision" : "8f8268be8756d93fb6800cc2746fbb6b9cfeb751",
+        "version" : "1.6.2"
       }
     },
     {
