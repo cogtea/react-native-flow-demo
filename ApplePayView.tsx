@@ -21,6 +21,57 @@ export interface ApiCallResult {
   error?: string;
 }
 
+export interface TokenizationResult {
+  token: string;
+  type: string;
+  expiresOn: string;
+  expiryMonth: number;
+  expiryYear: number;
+  last4: string;
+  bin: string;
+  scheme?: string;
+  schemeLocal?: string;
+  cardType?: string;
+  cardCategory?: string;
+  issuer?: string;
+  issuerCountry?: string;
+  productId?: string;
+  productType?: string;
+  name?: string;
+  cvv?: string;
+  billingAddress?: {
+    country: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+  phone?: {
+    number: string;
+    countryCode: string;
+  };
+  preferredScheme?: string;
+  cardMetadata?: {
+    bin: string;
+    scheme: string;
+    localSchemes?: string[];
+    cardType?: string;
+    cardCategory?: string;
+    currency?: string;
+    issuer?: string;
+    issuerCountry?: string;
+    issuerCountryName?: string;
+    productId?: string;
+    productType?: string;
+  };
+}
+
+export interface TokenizedCallbackResult {
+  accepted: boolean;
+  rejectionMessage?: string;
+}
+
 export interface ApplePayViewProps extends ViewProps {
   environment?: 'sandbox' | 'production';
   paymentSessionID?: string;
@@ -31,12 +82,15 @@ export interface ApplePayViewProps extends ViewProps {
   showPayButton?: boolean;
   handleSubmit?: (sessionData: SessionData) => Promise<ApiCallResult>;
   hasHandleSubmitListener?: boolean;
+  onTokenized?: (tokenizationResult: TokenizationResult) => Promise<TokenizedCallbackResult>;
+  hasOnTokenizedListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
 }
 
 type ApplePayNativeModule = {
   handleSubmitResponse: (requestId: string, success: boolean, data?: Record<string, any>) => void;
+  handleTokenizedResponse: (requestId: string, accepted: boolean, rejectionMessage?: string) => void;
   submit?: (paymentSessionID: string) => Promise<{ success: boolean }>;
   addListener?: (eventName: string) => void;
   removeListeners?: (count: number) => void;
@@ -62,7 +116,7 @@ const NativeApplePayView: any = Platform.OS === 'ios'
   : null;
 
 export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
-  const { handleSubmit, ...otherProps } = props;
+  const { handleSubmit, onTokenized, ...otherProps } = props;
 
   useEffect(() => {
     // Bridge event to receive submit requests from native
@@ -97,6 +151,33 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
     return () => subscription.remove();
   }, [handleSubmit]);
 
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || !onTokenized || !ApplePayModule) return;
+
+    const eventEmitter = new NativeEventEmitter(ApplePayModule as NativeModule);
+    const subscription = eventEmitter.addListener('onHandleTokenized', async (event) => {
+      const { tokenizationData } = event;
+      const { component, requestId, tokenizationResult } = tokenizationData ?? {};
+
+      if (component !== 'applepay') {
+        return;
+      }
+
+      console.debug('[ApplePayView] onHandleTokenized event received', { requestId });
+
+      try {
+        const result = await onTokenized(tokenizationResult as TokenizationResult);
+        console.debug('[ApplePayView] JS onTokenized result', { requestId, accepted: result.accepted });
+        ApplePayModule.handleTokenizedResponse(requestId, result.accepted, result.rejectionMessage);
+      } catch (error) {
+        console.error('[ApplePayView] Error in JS onTokenized (Apple Pay):', error);
+        ApplePayModule.handleTokenizedResponse(requestId, false, error instanceof Error ? error.message : 'Unknown error');
+      }
+    });
+
+    return () => subscription.remove();
+  }, [onTokenized]);
+
   if (Platform.OS !== 'ios' || !NativeApplePayView) {
     return <View {...props} />;
   }
@@ -105,6 +186,7 @@ export const ApplePayView: React.FC<ApplePayViewProps> = (props) => {
       {...otherProps}
       paymentMethod="applepay"
       hasHandleSubmitListener={!!handleSubmit}
+      hasOnTokenizedListener={!!onTokenized}
     />
   );
 };

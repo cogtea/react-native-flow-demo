@@ -14,7 +14,7 @@ import {
 
 import GooglePayView, { SessionData, ApiCallResult, isGooglePayAvailable } from './GooglePayView';
 import CardView from './CardView';
-import ApplePayView, { submitApplePay } from './ApplePayView';
+import ApplePayView, { submitApplePay, TokenizationResult, TokenizedCallbackResult } from './ApplePayView';
 
 const { FlowModule, CheckoutFlowManager, ApplePayModule } = NativeModules as any;
 
@@ -35,6 +35,21 @@ function App(): React.JSX.Element {
   const isSessionReady =
     paymentSession.id.trim().length > 0 &&
     paymentSession.secret.trim().length > 0;
+
+  const handleTokenized = useCallback(async (tokenizationResult: TokenizationResult): Promise<TokenizedCallbackResult> => {
+    const schemeLocal = tokenizationResult.schemeLocal?.toLowerCase();
+    const localSchemes = tokenizationResult.cardMetadata?.localSchemes?.map(s => s.toLowerCase()) ?? [];
+
+    const isMada = schemeLocal === 'mada' || localSchemes.includes('mada');
+
+    if (isMada) {
+      setStatus('Declined');
+      setError('Mada cards are not supported.');
+      return { accepted: false, rejectionMessage: 'Mada cards are not supported.' };
+    }
+
+    return { accepted: true };
+  }, []);
 
   const handleSubmit = useCallback(async (sessionData: SessionData): Promise<ApiCallResult> => {
     setStatus('Submitting payment...');
@@ -287,6 +302,7 @@ function App(): React.JSX.Element {
                   environment="sandbox"
                   showPayButton={false}
                   handleSubmit={handleSubmit}
+                  onTokenized={handleTokenized}
                 />
                 <Pressable
                   style={({ pressed }) => [

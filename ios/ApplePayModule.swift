@@ -13,7 +13,7 @@ class ApplePayModule: RCTEventEmitter {
   override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! {
-    return ["onHandleSubmit", "onFlowPaymentSuccess", "onFlowPaymentError"]
+    return ["onHandleSubmit", "onHandleTokenized", "onFlowPaymentSuccess", "onFlowPaymentError"]
   }
 
   // Allow emitting events from Swift code
@@ -21,10 +21,20 @@ class ApplePayModule: RCTEventEmitter {
     sendEvent(withName: "onHandleSubmit", body: eventBody)
   }
 
+  func emitHandleTokenized(eventBody: [String: Any]) {
+    sendEvent(withName: "onHandleTokenized", body: eventBody)
+  }
+
   // Called by JS after it handled submit
   @objc(handleSubmitResponse:success:data:)
   func handleSubmitResponse(_ requestId: String, success: Bool, data: NSDictionary?) {
     ApplePayViewRegistry.handleSubmitResponse(requestId: requestId, success: success, data: data)
+  }
+
+  // Called by JS after it handled tokenized
+  @objc(handleTokenizedResponse:accepted:rejectionMessage:)
+  func handleTokenizedResponse(_ requestId: String, accepted: Bool, rejectionMessage: NSString?) {
+    ApplePayViewRegistry.handleTokenizedResponse(requestId: requestId, accepted: accepted, rejectionMessage: rejectionMessage as String?)
   }
 
   @objc(submit:resolver:rejecter:)
@@ -45,6 +55,7 @@ class ApplePayModule: RCTEventEmitter {
 protocol HandleSubmitResponseTarget: AnyObject {
   var paymentSessionID: NSString? { get }
   func handleSubmitResponse(requestId: String, success: Bool, data: NSDictionary?)
+  func handleTokenizedResponse(requestId: String, accepted: Bool, rejectionMessage: String?)
   @MainActor func submitFromJS() -> Bool
 }
 
@@ -53,6 +64,8 @@ extension HandleSubmitResponseTarget {
   func submitFromJS() -> Bool {
     return false
   }
+
+  func handleTokenizedResponse(requestId: String, accepted: Bool, rejectionMessage: String?) {}
 }
 
 // Registry to route responses back to the right view instance
@@ -103,6 +116,24 @@ class ApplePayViewRegistry {
     for (_, weakViews) in views {
       for weakView in weakViews {
         weakView.target?.handleSubmitResponse(requestId: requestId, success: success, data: data)
+      }
+    }
+  }
+
+  static func handleTokenizedResponse(requestId: String, accepted: Bool, rejectionMessage: String?) {
+    if let targets = views[requestId] {
+      for weakTarget in targets {
+        weakTarget.target?.handleTokenizedResponse(requestId: requestId, accepted: accepted, rejectionMessage: rejectionMessage)
+      }
+      return
+    }
+    views = views.reduce(into: [String: [WeakHandleSubmitTarget]]()) { partial, entry in
+      let alive = entry.value.filter { $0.value != nil }
+      if !alive.isEmpty { partial[entry.key] = alive }
+    }
+    for (_, weakViews) in views {
+      for weakView in weakViews {
+        weakView.target?.handleTokenizedResponse(requestId: requestId, accepted: accepted, rejectionMessage: rejectionMessage)
       }
     }
   }
