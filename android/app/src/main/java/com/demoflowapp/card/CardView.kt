@@ -2,6 +2,8 @@ package com.demoflowapp.card
 
 import android.content.Context
 import android.util.Log
+import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
@@ -15,6 +17,7 @@ import com.checkout.components.interfaces.Environment
 import com.checkout.components.interfaces.api.CheckoutComponents
 import com.checkout.components.interfaces.component.CheckoutComponentConfiguration
 import com.checkout.components.interfaces.component.ComponentCallback
+import com.checkout.components.interfaces.component.ComponentOption
 import com.checkout.components.interfaces.error.CheckoutError
 import com.checkout.components.interfaces.model.PaymentMethodName
 import com.checkout.components.interfaces.model.PaymentSessionResponse
@@ -45,35 +48,74 @@ data class CustomApiCallResult(
 
 class CardView(context: Context, private val reactApplicationContext: ReactApplicationContext) : FrameLayout(context) {
     private var checkoutComponents: CheckoutComponents? = null
+    private var renderedCardComponent: Any? = null
     private var hasInitialized = false
     private var currentSessionData: SessionData? = null
+    private var lastIsValid: Boolean? = null
+    private var lastReportedHeightPx: Int = 0
+    private var renderedCardView: View? = null
+    private var globalLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
+    private var preDrawListener: ViewTreeObserver.OnPreDrawListener? = null
     private var pendingContinuations = mutableMapOf<String, kotlin.coroutines.Continuation<CustomApiCallResult>>()
+    private var submitAction: () -> Unit = {
+        Log.e("CardView", "❌ submitFromJs called before card component submit action is ready")
+    }
+    private val layoutRunnable = Runnable {
+        if (width > 0) {
+            measure(
+                MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+            )
+            layout(left, top, right, top + measuredHeight)
+            emitNativeHeightIfChanged(measuredHeight)
+        }
+    }
     var environment: Environment = Environment.SANDBOX
+    var showPayButton: Boolean = false
     var hasHandleSubmitListener: Boolean = false  // Flag to indicate if handleSubmit listener is available
 
-    private val mLayoutRunnable = Runnable {
-        if (!isAttachedToWindow) return@Runnable
-        val child = if (childCount > 0) getChildAt(0) else null
-        if (child != null && !child.isAttachedToWindow) return@Runnable
+    init {
+        Log.d("CardView", "🎯 CardView instance created")
+        clipChildren = false
+        clipToPadding = false
+    }
 
-        val safeWidth = if (width > 0) width else return@Runnable
-        val safeHeight = if (height > 0) height else return@Runnable
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        val child = renderedCardView
+        if (child != null && child.isAttachedToWindow) {
+            val w = right - left
+            // Measure child without height constraint so Compose can report its full preferred height
+            // even when CardView is constrained to a smaller size by RN's Yoga layout.
+            // This ensures addOnLayoutChangeListener fires on every Compose recomposition.
+            child.measure(
+                MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+            )
+            child.layout(0, 0, w, child.measuredHeight)
+        } else {
+            super.onLayout(changed, left, top, right, bottom)
+        }
+    }
 
-        measure(
-            MeasureSpec.makeMeasureSpec(safeWidth, MeasureSpec.EXACTLY),
-            MeasureSpec.makeMeasureSpec(safeHeight, MeasureSpec.EXACTLY)
-        )
-        layout(left, top, right, bottom)
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val child = renderedCardView
+        if (child != null && child.isAttachedToWindow) {
+            child.measure(
+                widthMeasureSpec,
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+            )
+            val fallback = super.getSuggestedMinimumHeight().coerceAtLeast(1)
+            val h = child.measuredHeight.coerceAtLeast(fallback)
+            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), h)
+            emitNativeHeightIfChanged(h)
+        } else {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        }
     }
 
     override fun requestLayout() {
         super.requestLayout()
-        if (!isAttachedToWindow) return
-        post(mLayoutRunnable)
-    }
-
-    init {
-        Log.d("CardView", "🎯 CardView instance created")
+        post(layoutRunnable)
     }
 
     private fun sendEvent(eventName: String, params: WritableMap) {
@@ -81,6 +123,68 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
                 .emit(eventName, params)
     }
+
+    private fun emitValidity(isValid: Boolean) {
+        if (lastIsValid == isValid) return
+        lastIsValid = isValid
+        val map = Arguments.createMap().apply {
+            putBoolean("isValid", isValid)
+        }
+        sendEvent("onCardValidityChange", map)
+    }
+
+    private fun emitNativeHeightIfChanged(heightPx: Int) {
+        if (heightPx <= 0) return
+        if (heightPx == lastReportedHeightPx) return
+        lastReportedHeightPx = heightPx
+        val heightDp = (heightPx / resources.displayMetrics.density).toInt()
+        val map = Arguments.createMap().apply {
+            putInt("height", heightDp)
+        }
+        sendEvent("onCardNativeHeight", map)
+    }
+
+    private fun detachHeightListeners(view: View?) {
+        if (view == null) return
+        if (!view.viewTreeObserver.isAlive) return
+
+        globalLayoutListener?.let { listener ->
+            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+        }
+        preDrawListener?.let { listener ->
+            view.viewTreeObserver.removeOnPreDrawListener(listener)
+        }
+
+        globalLayoutListener = null
+        preDrawListener = null
+    }
+
+    private fun sampleAndEmitHeight(view: View) {
+        if (!view.isAttachedToWindow) return
+        var h = view.height
+        if (h <= 0) {
+            val w = view.width.coerceAtLeast(this@CardView.width).coerceAtLeast(1)
+            view.measure(
+                MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+            )
+            h = view.measuredHeight
+        }
+        if (h > 0) {
+            val prev = lastReportedHeightPx
+            emitNativeHeightIfChanged(h)
+            if (h != prev) {
+                this@CardView.requestLayout()
+            }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        detachHeightListeners(renderedCardView)
+    }
+
+
     
     /**
      * Called from JavaScript with the API response after payment submission
@@ -261,6 +365,30 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
                                 putString("errorCode", checkoutError.code.toString())
                             }
                     sendEvent("onFlowPaymentError", map)
+                },
+                onChange = { component ->
+                    renderedCardView?.let { view ->
+                        // Sample immediately on the same callback tick to reduce perceived latency.
+                        sampleAndEmitHeight(view)
+                    }
+                    // Trigger re-measure so Yoga picks up the new child height.
+                    this@CardView.requestLayout()
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val isValid = try {
+                            component.isValid()
+                        } catch (_: Throwable) {
+                            false
+                        }
+                        if (BuildConfig.DEBUG) {
+                            Log.d("CardView", "onChange: ${component.name}, isValid=$isValid")
+                        }
+                        emitValidity(isValid)
+                    }
+                    val map =
+                            Arguments.createMap().apply {
+                                putString("component", component::class.java.simpleName)
+                            }
+                    sendEvent("onFlowPaymentChange", map)
                 }
             )
         } else {
@@ -301,18 +429,19 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
             )
         }
 
+    val cardOption = ComponentOption(
+        showPayButton = showPayButton,
+        callback = customComponentCallback
+    )
+
     val configuration =
         CheckoutComponentConfiguration(
-            context = activityForCoordinator,
-                        paymentSession =
-                                PaymentSessionResponse(
-                                        id = paymentSessionID,
-                                        secret = paymentSessionSecret
-                                ),
-                        componentCallback = customComponentCallback,
-                        publicKey = publicKey,
-            environment = environment
-                )
+            activityForCoordinator,
+            publicKey,
+            environment,
+            PaymentSessionResponse(paymentSessionID, paymentSessionSecret),
+            mapOf(PaymentMethodName.Card to cardOption)
+        )
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
@@ -322,33 +451,61 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
                 
                 Log.d("CardView", "💳 Creating Card component...")
                 val cardComponent = checkoutComponents!!.create(PaymentMethodName.Card)
+                renderedCardComponent = cardComponent
+                submitAction = {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            cardComponent.submit()
+                        } catch (t: Throwable) {
+                            Log.e("CardView", "❌ cardComponent.submit() failed", t)
+                        }
+                    }
+                }
                 Log.d("CardView", "💳 Card component created")
                 
                 val isAvailable = cardComponent.isAvailable()
                 Log.d("CardView", "💳 Card isAvailable: $isAvailable")
                 
                 Log.d("CardView", "🎨 Requesting view from component...")
+                val previousView = renderedCardView
                 val view = cardComponent.provideView(this@CardView)
+                renderedCardView = view
                 Log.d("CardView", "✅ View provided successfully: $view")
 
                 view.setViewTreeLifecycleOwner(activityForCoordinator)
                 view.setViewTreeViewModelStoreOwner(activityForCoordinator)
                 view.setViewTreeSavedStateRegistryOwner(activityForCoordinator)
 
-                val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                val lp = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
                 view.layoutParams = lp
 
-                // Your logic here is fine.
-                // The `addView(view)` call inside the `post` block
-                // will now trigger your overridden `requestLayout()`,
-                // which will then post the `mLayoutRunnable` and fix the UI.
                 Log.d("CardView", "🧹 Removing all existing views")
                 this@CardView.removeAllViews()
+
                 Log.d("CardView", "📌 Posting view attachment to main thread")
                 this@CardView.post {
                     try {
                         Log.d("CardView", "➕ Adding card view to container")
+                        detachHeightListeners(previousView)
                         addView(view)
+                        val listener = ViewTreeObserver.OnGlobalLayoutListener {
+                            sampleAndEmitHeight(view)
+                        }
+                        val preDraw = ViewTreeObserver.OnPreDrawListener {
+                            // Compose can update size during draw animations without a full global layout pass.
+                            // Sampling here makes push/pull behavior consistent even when inputs are not focused.
+                            sampleAndEmitHeight(view)
+                            true
+                        }
+                        globalLayoutListener = listener
+                        preDrawListener = preDraw
+                        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
+                        view.viewTreeObserver.addOnPreDrawListener(preDraw)
+                        val containerLp = layoutParams
+                        if (containerLp != null && containerLp.height != LayoutParams.WRAP_CONTENT) {
+                            containerLp.height = LayoutParams.WRAP_CONTENT
+                            layoutParams = containerLp
+                        }
                         view.requestLayout()
                         this@CardView.requestLayout()
                         this@CardView.invalidate()
@@ -363,5 +520,10 @@ class CardView(context: Context, private val reactApplicationContext: ReactAppli
                 Log.e("CardView", "❌ Unexpected error: ${e.message}", e)
             }
         }
+    }
+
+    fun submitFromJs() {
+        submitAction()
+        Log.d("CardView", "✅ submitFromJs invoked cardComponent.submit()")
     }
 }

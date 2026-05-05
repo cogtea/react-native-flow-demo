@@ -36,5 +36,20 @@ target 'DemoFlowApp' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Work around fmt consteval compile failures seen on newer Xcode/clang.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'fmt'
+
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+
+        defs = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+        defs = Array(defs)
+        defs << 'FMT_USE_CONSTEVAL=0' unless defs.include?('FMT_USE_CONSTEVAL=0')
+        defs << 'FMT_USE_CONSTEXPR=0' unless defs.include?('FMT_USE_CONSTEXPR=0')
+        build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+      end
+    end
   end
 end

@@ -3,6 +3,7 @@ package com.demoflowapp.card
 import android.util.Log
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.facebook.react.bridge.UiThreadUtil
 
 class CardModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -45,6 +46,29 @@ class CardModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaMo
             }
         } catch (e: Exception) {
             Log.e("CardModule", "❌ Error in handleSubmitResponse", e)
+        }
+    }
+
+    @ReactMethod
+    fun submit(paymentSessionID: String, promise: Promise) {
+        try {
+            val cardView = CardViewRegistry.getView(paymentSessionID)
+            if (cardView == null) {
+                promise.reject("E_CARD_VIEW_NOT_FOUND", "CardView not found for sessionId=$paymentSessionID")
+                return
+            }
+            UiThreadUtil.runOnUiThread {
+                try {
+                    cardView.submitFromJs()
+                    promise.resolve(true)
+                } catch (e: Exception) {
+                    Log.e("CardModule", "❌ Error in submit on UI thread", e)
+                    promise.reject("E_CARD_SUBMIT", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("CardModule", "❌ Error in submit", e)
+            promise.reject("E_CARD_SUBMIT", e)
         }
     }
 }

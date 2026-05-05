@@ -16,6 +16,7 @@ export interface ApiCallResult {
 
 export interface CardViewProps extends ViewProps {
   environment?: 'sandbox' | 'production';
+  showPayButton?: boolean;
   paymentSessionID?: string;
   paymentSessionToken?: string;
   paymentSessionSecret?: string;
@@ -26,6 +27,9 @@ export interface CardViewProps extends ViewProps {
   hasOnTokenizedListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
+  onPaymentChange?: (event: { component: string }) => void;
+  onCardValidityChange?: (event: { isValid: boolean }) => void;
+  onCardNativeHeight?: (event: { height: number }) => void;
 }
 
 const { CardModule } = NativeModules;
@@ -40,7 +44,7 @@ const NativeCardViewAndroid: any = Platform.OS === 'android' ? requireNativeComp
 const NativeCardViewIOS: any = Platform.OS === 'ios' ? requireNativeComponent(IOS_VIEW_NAME) : null;
 
 export const CardView: React.FC<CardViewProps> = (props) => {
-  const { handleSubmit, onTokenized, ...otherProps } = props;
+  const { handleSubmit, onTokenized, onPaymentChange, onCardValidityChange, onCardNativeHeight, ...otherProps } = props;
 
   useEffect(() => {
     if (!handleSubmit) {
@@ -154,6 +158,83 @@ export const CardView: React.FC<CardViewProps> = (props) => {
 
     return;
   }, [onTokenized]);
+
+  useEffect(() => {
+    if (!onPaymentChange) return;
+
+    if (Platform.OS === 'android' && CardModule) {
+      const eventEmitter = new NativeEventEmitter(CardModule);
+      const subscription = eventEmitter.addListener('onFlowPaymentChange', (event) => {
+        console.log('🔄 [CardView] onFlowPaymentChange (Android):', event);
+        onPaymentChange({ component: event.component });
+      });
+      return () => subscription.remove();
+    }
+
+    if (Platform.OS === 'ios' && ApplePayModule) {
+      const eventEmitter = new NativeEventEmitter(ApplePayModule);
+      const subscription = eventEmitter.addListener('onFlowPaymentChange', (event) => {
+        console.log('🔄 [CardView] onFlowPaymentChange (iOS):', event);
+        onPaymentChange({ component: event.component });
+      });
+      return () => subscription.remove();
+    }
+
+    return;
+  }, [onPaymentChange]);
+
+  useEffect(() => {
+    if (!onCardValidityChange) return;
+
+    if (Platform.OS === 'android' && CardModule) {
+      const eventEmitter = new NativeEventEmitter(CardModule);
+      const subscription = eventEmitter.addListener('onCardValidityChange', (event) => {
+        console.log('🔎 [CardView] onCardValidityChange (Android):', event);
+        onCardValidityChange({ isValid: !!event.isValid });
+      });
+      return () => subscription.remove();
+    }
+
+    if (Platform.OS === 'ios' && ApplePayModule) {
+      const eventEmitter = new NativeEventEmitter(ApplePayModule);
+      const subscription = eventEmitter.addListener('onCardValidityChange', (event) => {
+        console.log('🔎 [CardView] onCardValidityChange (iOS):', event);
+        onCardValidityChange({ isValid: !!event.isValid });
+      });
+      return () => subscription.remove();
+    }
+
+    return;
+  }, [onCardValidityChange]);
+
+  useEffect(() => {
+    if (!onCardNativeHeight) return;
+
+    if (Platform.OS === 'android' && CardModule) {
+      const eventEmitter = new NativeEventEmitter(CardModule);
+      const subscription = eventEmitter.addListener('onCardNativeHeight', (event) => {
+        const next = Number(event?.height ?? 0);
+        if (Number.isFinite(next) && next > 0) {
+          onCardNativeHeight({ height: next });
+        }
+      });
+      return () => subscription.remove();
+    }
+
+    if (Platform.OS === 'ios' && ApplePayModule) {
+      const eventEmitter = new NativeEventEmitter(ApplePayModule);
+      const subscription = eventEmitter.addListener('onCardNativeHeight', (event) => {
+        if (event?.component && event.component !== 'card') return;
+        const next = Number(event?.height ?? 0);
+        if (Number.isFinite(next) && next > 0) {
+          onCardNativeHeight({ height: next });
+        }
+      });
+      return () => subscription.remove();
+    }
+
+    return;
+  }, [onCardNativeHeight]);
 
   if (Platform.OS === 'android' && NativeCardViewAndroid) {
     return <NativeCardViewAndroid {...otherProps} hasHandleSubmitListener={!!handleSubmit} hasOnTokenizedListener={!!onTokenized} />;

@@ -69,7 +69,7 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
       } : nil
 
       let onTokenizedCallback: ((CheckoutComponents.TokenizationResult) async -> CheckoutComponents.CallbackResult)? = hasOnTokenizedListener ? { [weak self] tokenizationResult in
-        guard let self else { return .accepted }
+        guard let self, self.hasOnTokenizedListener else { return .accepted }
         return await self.bridgeOnTokenized(tokenizationResult: tokenizationResult)
       } : nil
 
@@ -90,7 +90,10 @@ class ApplePayView: UIView, HandleSubmitResponseTarget {
           self?.submittableComponent = component
         },
         onSubmit: { _ in },
-        onTokenized: onTokenizedCallback,
+        onTokenized: { tokenDetails in
+          NSLog("ApplePayView onTokenized")
+          return CheckoutComponents.CallbackResult.accepted
+        },
         handleSubmit: handleSubmitCallback,
         onSuccess: { [weak self] paymentMethod, paymentID in
           guard let self else { return }

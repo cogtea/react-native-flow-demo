@@ -11,15 +11,21 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
   @objc var merchantIdentifier: NSString? { didSet { maybeInitialize() } }
   @objc var environment: NSString? { didSet { maybeInitialize() } }
   @objc var paymentMethod: NSString? { didSet { maybeInitialize() } }
+  @objc var showPayButton: Bool = false { didSet { maybeInitialize() } }
   @objc var hasHandleSubmitListener: Bool = false { didSet { maybeInitialize() } }
   @objc var hasOnTokenizedListener: Bool = false { didSet { maybeInitialize() } }
 
   private var hasInitialized = false
   private var checkoutComponents: CheckoutComponents?
+  private var submittableComponent: (any CheckoutComponents.Submittable)?
   private var hostingController: UIHostingController<AnyView>?
   private weak var parentViewControllerRef: UIViewController?
+  private var lastEmittedHeight: Int = 0
+  private var lastValidity: Bool?
   private var pendingContinuations: [String: CheckedContinuation<CheckoutComponents.APICallResult, Never>] = [:]
   private var pendingTokenizedContinuations: [String: CheckedContinuation<CheckoutComponents.CallbackResult, Never>] = [:]
+  private var scrollObservations: [NSKeyValueObservation] = []
+  private var hostingControllerHeightConstraint: NSLayoutConstraint?
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -40,6 +46,14 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
   override func didMoveToWindow() {
     super.didMoveToWindow()
     maybeInitialize()
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    if scrollObservations.isEmpty, hostingController?.view != nil {
+      setupScrollObservations()
+    }
+    emitCardNativeHeight()
   }
 
   private func maybeInitialize() {
@@ -66,7 +80,7 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
       } : nil
 
       let onTokenizedCallback: ((CheckoutComponents.TokenizationResult) async -> CheckoutComponents.CallbackResult)? = hasOnTokenizedListener ? { [weak self] tokenizationResult in
-        guard let self else { return .accepted }
+        guard let self, self.hasOnTokenizedListener else { return .accepted }
         return await self.bridgeOnTokenized(tokenizationResult: tokenizationResult)
       } : nil
 
@@ -75,7 +89,23 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
           NSLog("CardPayView onReady: \(paymentMethod.name)")
         },
         handleTap: { _ async -> Bool in true },
-        onChange: { _ in },
+        onChange: { [weak self] component in
+          guard let self else { return }
+          if let submittable = component as? any CheckoutComponents.Submittable {
+            self.submittableComponent = submittable
+            let isValid = submittable.isValid
+            if self.lastValidity != isValid {
+              self.lastValidity = isValid
+              self.emit(name: "onCardValidityChange", body: ["isValid": isValid])
+            }
+          }
+          self.setupScrollObservations()
+          if let hostView = self.hostingController?.view {
+            self.resetNestedScrollOffsets(in: hostView)
+          }
+          self.emit(name: "onFlowPaymentChange", body: ["component": "Card"])
+          self.emitCardNativeHeight()
+        },
         onSubmit: { _ in },
         onTokenized: onTokenizedCallback,
         handleSubmit: handleSubmitCallback,
@@ -110,12 +140,26 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
       )
 
       checkoutComponents = CheckoutComponents(configuration: configuration)
+
+      let rememberMeConfiguration: CheckoutComponents.RememberMeConfiguration = {
+        let data = CheckoutComponents.RememberMeConfiguration.Data(
+          email: "",
+          phone: CheckoutComponents.Phone(countryCode: "971", number: "585436527"),
+        )
+        return .init(data: data, showPayButton: showPayButton)
+      }()
+
       let component = try checkoutComponents!.create(
         .card(
-          showPayButton: true,
-          paymentButtonAction: .payment
+          showPayButton: showPayButton,
+          paymentButtonAction: .payment,
+          rememberMeConfiguration: rememberMeConfiguration
         )
       )
+
+      if let submittable = component as? any CheckoutComponents.Submittable {
+        submittableComponent = submittable
+      }
 
       if component.isAvailable == false {
         NSLog("CardPayView: component not available")
@@ -129,6 +173,8 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
 
       let view = component.render()
       attachSwiftUIView(view)
+      setupScrollObservations()
+      emitCardNativeHeight()
     } catch {
       NSLog("CardPayView init error: \(error.localizedDescription)")
     }
@@ -183,12 +229,19 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
     }
 
     self.addSubview(controller.view)
+    // Use an explicit height constraint instead of a bottom anchor.
+    // We update this constraint to match the SDK scroll view's contentSize,
+    // so the hosting controller's view is always exactly as tall as its content.
+    // This means the internal UIScrollView never needs to scroll → no top-clipping.
+    let heightConstraint = controller.view.heightAnchor.constraint(equalToConstant: 420)
+    heightConstraint.priority = UILayoutPriority(999)
     NSLayoutConstraint.activate([
       controller.view.leadingAnchor.constraint(equalTo: self.leadingAnchor),
       controller.view.trailingAnchor.constraint(equalTo: self.trailingAnchor),
       controller.view.topAnchor.constraint(equalTo: self.topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+      heightConstraint
     ])
+    hostingControllerHeightConstraint = heightConstraint
 
     if let parentVC {
       controller.didMove(toParent: parentVC)
@@ -200,6 +253,104 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
 
   private func emit(name: String, body: [String: Any]) {
     ApplePayModule.shared?.sendEvent(withName: name, body: body)
+  }
+
+  private func setupScrollObservations() {
+    scrollObservations.forEach { $0.invalidate() }
+    scrollObservations = []
+    guard let hostView = hostingController?.view else { return }
+    gatherScrollViews(in: hostView).forEach { scroll in
+      scroll.isScrollEnabled = false
+      scroll.bounces = false
+      scroll.contentInset = .zero
+      scroll.scrollIndicatorInsets = .zero
+      if #available(iOS 11.0, *) {
+        scroll.contentInsetAdjustmentBehavior = .never
+      }
+      if scroll.contentOffset.y != 0 || scroll.contentOffset.x != 0 {
+        scroll.setContentOffset(.zero, animated: false)
+      }
+      // When contentSize grows/shrinks, pin the hosting controller height to match.
+      // This makes the UIScrollView's frame == its contentSize, so it never needs
+      // to scroll and never clips the top card fields.
+      let sizeObs = scroll.observe(\.contentSize, options: [.new]) { [weak self] _, change in
+        guard let self else { return }
+        let newContentHeight = change.newValue?.height ?? 0
+        guard newContentHeight > 10 else { return }
+        DispatchQueue.main.async {
+          let nextHeight = newContentHeight
+          if let hc = self.hostingControllerHeightConstraint,
+             abs(hc.constant - nextHeight) > 0.5 {
+            hc.constant = nextHeight
+            self.hostingController?.view.setNeedsLayout()
+          }
+          self.emitCardNativeHeight()
+        }
+      }
+      scrollObservations.append(sizeObs)
+    }
+  }
+
+  private func resetNestedScrollOffsets(in view: UIView) {
+    if let scroll = view as? UIScrollView {
+      if scroll.contentOffset.y != 0 || scroll.contentOffset.x != 0 {
+        scroll.setContentOffset(.zero, animated: false)
+      }
+    }
+    for subview in view.subviews {
+      resetNestedScrollOffsets(in: subview)
+    }
+  }
+
+  private func gatherScrollViews(in view: UIView) -> [UIScrollView] {
+    var result: [UIScrollView] = []
+    if let scroll = view as? UIScrollView { result.append(scroll) }
+    for sub in view.subviews { result += gatherScrollViews(in: sub) }
+    return result
+  }
+
+  private func maxNestedScrollContentHeight(in view: UIView) -> CGFloat {
+    var maxHeight: CGFloat = 0
+    if let scroll = view as? UIScrollView {
+      maxHeight = max(maxHeight, scroll.contentSize.height)
+    }
+    for subview in view.subviews {
+      maxHeight = max(maxHeight, maxNestedScrollContentHeight(in: subview))
+    }
+    return maxHeight
+  }
+
+  private func emitCardNativeHeight() {
+    let measuredHeight: Int = {
+      guard let hostView = hostingController?.view else {
+        return Int(ceil(self.bounds.height))
+      }
+      // Primary: use the nested UIScrollView's contentSize (most accurate for SwiftUI forms)
+      let nestedScrollHeight = maxNestedScrollContentHeight(in: hostView)
+      if nestedScrollHeight > 10 {
+        return Int(ceil(nestedScrollHeight))
+      }
+      // Fallback: systemLayoutSizeFitting
+      let targetWidth = max(self.bounds.width, hostView.bounds.width, 1)
+      let fittingSize = CGSize(width: targetWidth, height: UIView.layoutFittingCompressedSize.height)
+      let fittedHeight = hostView.systemLayoutSizeFitting(
+        fittingSize,
+        withHorizontalFittingPriority: .required,
+        verticalFittingPriority: .fittingSizeLevel
+      ).height
+      if fittedHeight > 10 {
+        return Int(ceil(fittedHeight))
+      }
+      return Int(ceil(self.bounds.height))
+    }()
+
+    guard measuredHeight > 0 else { return }
+    guard measuredHeight != lastEmittedHeight else { return }
+    lastEmittedHeight = measuredHeight
+    emit(name: "onCardNativeHeight", body: [
+      "component": "card",
+      "height": measuredHeight
+    ])
   }
 
   private func emitHandleSubmit(requestId: String, id: String, secret: String, submitData: String) {
@@ -312,5 +463,29 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
     } else {
       continuation.resume(returning: .rejected(message: rejectionMessage))
     }
+  }
+
+  @MainActor
+  func submitFromJS() -> Bool {
+    guard let component = submittableComponent else {
+      emit(name: "onFlowPaymentError", body: [
+        "component": "Card",
+        "errorMessage": "Card component is not ready yet",
+        "errorCode": "NOT_READY"
+      ])
+      return false
+    }
+
+    if component.isValid == false {
+      emit(name: "onFlowPaymentError", body: [
+        "component": "Card",
+        "errorMessage": "Card component is not valid",
+        "errorCode": "INVALID"
+      ])
+      return false
+    }
+
+    component.submit()
+    return true
   }
 }

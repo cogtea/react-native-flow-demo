@@ -31,30 +31,34 @@ class CheckoutFlowManager: RCTEventEmitter {
             do {
                 let session = PaymentSession(id: paymentSessionID, paymentSessionSecret: paymentSessionSecret)
 
+                let onSuccess: (@Sendable (any CheckoutComponents.Describable, CheckoutComponents.PaymentID) -> Void)? = { [weak self] paymentMethod, paymentID in
+                    print("✅ Payment successful: \(paymentID)")
+                    let eventBody: [String: Any] = [
+                        "component": "Flow",
+                        "paymentId": paymentID
+                    ]
+                    self?.sendEvent(withName: "onFlowPaymentSuccess", body: eventBody)
+                    self?.dismissFlowView()
+                }
+
+                let onError: (@Sendable (CheckoutComponents.Error) -> Void)? = { error in
+                    print("❌ Payment error: \(error)")
+                }
+
                 let config = try await CheckoutComponents.Configuration(
                     paymentSession: session,
                     publicKey: publicKey,
                     environment: environment,
                     callbacks: CheckoutComponents.Callbacks(
-                        onSuccess: { [weak self] paymentMethod, paymentID in
-                            print("✅ Payment successful: \(paymentID)")
-                            let eventBody: [String: Any] = [
-                                "component": "Flow",
-                                "paymentId": paymentID
-                            ]
-                            self?.sendEvent(withName: "onFlowPaymentSuccess", body: eventBody)
-                            self?.dismissFlowView()
-                        },
-                        onError: { [weak self] error in
-                            print("❌ Payment error: \(error)")
-                            let eventBody: [String: Any] = [
-                                "component": "Flow",
-                                "errorMessage": error.localizedDescription,
-                                "errorCode": "\(error.localizedDescription)"
-                            ]
-                            //self?.sendEvent(withName: "onFlowPaymentError", body: eventBody)
-                            //self?.dismissFlowView()
-                        }
+                        onReady: nil,
+                        handleTap: nil,
+                        onChange: nil,
+                        onCardBinChanged: nil,
+                        onSubmit: nil,
+                        onTokenized: nil,
+                        handleSubmit: nil,
+                        onSuccess: onSuccess,
+                        onError: onError
                     )
                 )
 

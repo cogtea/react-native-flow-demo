@@ -3,9 +3,6 @@ package com.demoflowapp.card
 import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.uimanager.ViewManager
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReadableArray
 
 class CardViewManager : SimpleViewManager<CardView>() {
     override fun getName() = "RNCardView"
@@ -17,15 +14,11 @@ class CardViewManager : SimpleViewManager<CardView>() {
     }
 
     override fun createViewInstance(reactContext: ThemedReactContext): CardView {
-        // Important: use ThemedReactContext as the View context so Fabric registers
-        // the correct EventEmitter for touches. Passing an Activity context can cause
-        // "Cannot find EventEmitter for receivedTouches" errors.
         val appContext = reactContext.reactApplicationContext
         android.util.Log.d("CardViewManager", "🎬 createViewInstance called")
         return CardView(reactContext, appContext)
     }
 
-    // Ensure we attempt initialization after a full props batch is applied
     override fun onAfterUpdateTransaction(view: CardView) {
         super.onAfterUpdateTransaction(view)
         android.util.Log.d("CardViewManager", "🔄 onAfterUpdateTransaction called")
@@ -39,8 +32,6 @@ class CardViewManager : SimpleViewManager<CardView>() {
             put("paymentSessionID", value ?: "")
         }
     }
-
-
 
     @ReactProp(name = "paymentSessionSecret")
     fun setPaymentSessionSecret(view: CardView, value: String?) {
@@ -71,8 +62,11 @@ class CardViewManager : SimpleViewManager<CardView>() {
         view.hasHandleSubmitListener = value
     }
 
-    // Note: handleSubmit callback is set directly on the view via direct method call
-    // React Native @ReactProp doesn't support Callback type directly
+    @ReactProp(name = "showPayButton")
+    fun setShowPayButton(view: CardView, value: Boolean) {
+        android.util.Log.d("CardViewManager", "📝 setShowPayButton: $value")
+        view.showPayButton = value
+    }
 
     private fun maybeInit(view: CardView) {
         val tag = view.tag as? Map<String, String> ?: return
@@ -87,6 +81,4 @@ class CardViewManager : SimpleViewManager<CardView>() {
             android.util.Log.d("CardViewManager", "⏳ Waiting for props: id=$id, secret=$secret, key=$key")
         }
     }
-
-
 }

@@ -13,7 +13,15 @@ class ApplePayModule: RCTEventEmitter {
   override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! {
-    return ["onHandleSubmit", "onHandleTokenized", "onFlowPaymentSuccess", "onFlowPaymentError"]
+    return [
+      "onHandleSubmit",
+      "onHandleTokenized",
+      "onFlowPaymentSuccess",
+      "onFlowPaymentError",
+      "onFlowPaymentChange",
+      "onCardValidityChange",
+      "onCardNativeHeight"
+    ]
   }
 
   // Allow emitting events from Swift code
