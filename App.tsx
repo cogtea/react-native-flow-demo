@@ -32,6 +32,7 @@ function App(): React.JSX.Element {
     token: '',
     secret: '',
   });
+  const [cardHeight, setCardHeight] = useState(400);
   const isSessionReady =
     paymentSession.id.trim().length > 0 &&
     paymentSession.secret.trim().length > 0;
@@ -139,6 +140,12 @@ function App(): React.JSX.Element {
             setStatus('Error');
             setError(`Error from ${errorData.component}: ${errorData.errorMessage}`);
             setShowingFlow(false);
+          }),
+          emitter.addListener('onDimensionsChanged', (data: any) => {
+            console.debug('[App] CardView dimensions changed:', data.height);
+            if (data.height > 0) {
+              setCardHeight(data.height);
+            }
           })
         );
       }
@@ -337,14 +344,14 @@ function App(): React.JSX.Element {
               {isSessionReady ? (
                 <CardView
                   key={`card-${flowRenderKey}`}
-                  style={styles.cardView}
+                  style={[styles.cardView, { height: cardHeight }]}
                   paymentSessionID={paymentSession.id}
                   paymentSessionToken={paymentSession.token}
                   paymentSessionSecret={paymentSession.secret}
                   publicKey={publicKey}
                   environment="sandbox"
                   hasHandleSubmitListener={true}
-                  //handleSubmit={handleSubmit}
+                //handleSubmit={handleSubmit}
                 />
               ) : (
                 <View style={styles.loadingContainer}>
@@ -397,9 +404,9 @@ function App(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20},
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   containerFlow: { flex: 1, width: '100%', backgroundColor: '#fff' },
-  payButtonContainer: { 
+  payButtonContainer: {
     padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -429,10 +436,10 @@ const styles = StyleSheet.create({
   },
   flowContainer: { flex: 1, width: '100%' },
   paymentMethodContainer: { padding: 20 },
-  cardView: { width: '100%', height: 700 },
-  loadingContainer: { 
-    height: 400, 
-    alignItems: 'center', 
+  cardView: { width: '100%', height: 400, backgroundColor: '#c00' },
+  loadingContainer: {
+    height: 400,
+    alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f9f9f9',
   },

@@ -532,7 +532,7 @@ This file configures app-level Gradle settings.
 
 **Key Additions and Their Purpose:**
 
-- Added the Flow SDK dependency: `implementation("com.checkout:checkout-android-components:1.0.0-beta-1")`.
+- Added the Flow SDK dependency: `implementation("com.checkout:checkout-android-components:1.10.0")`.
 - Defined `FLOW_API_KEY` in `buildConfigField` for secure API key management.
 
 #### Sync Gradle Files

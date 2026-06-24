@@ -13,6 +13,8 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
   @objc var paymentMethod: NSString? { didSet { maybeInitialize() } }
   @objc var hasHandleSubmitListener: Bool = false { didSet { maybeInitialize() } }
   @objc var hasOnTokenizedListener: Bool = false { didSet { maybeInitialize() } }
+  @objc var onDimensionsChanged: RCTDirectEventBlock?
+  private var measuredSize: CGSize = .zero
 
   private var hasInitialized = false
   private var checkoutComponents: CheckoutComponents?
@@ -127,8 +129,13 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
         return
       }
 
-      let view = component.render()
-      attachSwiftUIView(view)
+      let view = MeasuringView(
+        content: { component.render() },
+        onChange: { [weak self] newSize in
+          self?.onDimensionsChanged(newSize)
+        }
+      )
+      attachSwiftUIView(AnyView(view))
     } catch {
       NSLog("CardPayView init error: \(error.localizedDescription)")
     }
@@ -196,6 +203,26 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
 
     self.parentViewControllerRef = parentVC
     self.hostingController = controller
+  }
+
+  private func onDimensionsChanged(_ size: CGSize) {
+    guard measuredSize != size else { return }
+    measuredSize = size
+
+    if let onDimensionsChanged = self.onDimensionsChanged {
+      onDimensionsChanged([
+        "width": size.width,
+        "height": size.height
+      ])
+    }
+
+    if let bridge = ApplePayModule.shared?.bridge, let uiManager = bridge.uiManager {
+      let layoutSize = CGSize(width: self.frame.width, height: size.height)
+      uiManager.setSize(layoutSize, forView: self)
+      uiManager.setIntrinsicContentSize(CGSize(width: UIView.noIntrinsicMetric, height: size.height), forView: self)
+    }
+
+    invalidateIntrinsicContentSize()
   }
 
   private func emit(name: String, body: [String: Any]) {
@@ -312,5 +339,30 @@ class CardPayView: UIView, HandleSubmitResponseTarget {
     } else {
       continuation.resume(returning: .rejected(message: rejectionMessage))
     }
+  }
+}
+
+struct SizePreferenceKey: PreferenceKey {
+  static var defaultValue: CGSize = .zero
+  static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+    value = nextValue()
+  }
+}
+
+struct MeasuringView<Content: View>: View {
+  let content: () -> Content
+  let onChange: (CGSize) -> Void
+
+  var body: some View {
+    content()
+      .background(
+        GeometryReader { geometry in
+          Color.clear
+            .preference(key: SizePreferenceKey.self, value: geometry.size)
+        }
+      )
+      .onPreferenceChange(SizePreferenceKey.self) { size in
+        onChange(size)
+      }
   }
 }

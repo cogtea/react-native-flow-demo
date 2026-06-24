@@ -26,6 +26,7 @@ export interface CardViewProps extends ViewProps {
   hasOnTokenizedListener?: boolean;
   onPaymentSuccess?: (event: { nativeEvent: { component: string; paymentId: string } }) => void;
   onPaymentError?: (event: { nativeEvent: { component: string; errorMessage: string; errorCode: string } }) => void;
+  onDimensionsChanged?: (event: { nativeEvent: { width: number; height: number } }) => void;
 }
 
 const { CardModule } = NativeModules;
@@ -156,7 +157,13 @@ export const CardView: React.FC<CardViewProps> = (props) => {
   }, [onTokenized]);
 
   if (Platform.OS === 'android' && NativeCardViewAndroid) {
-    return <NativeCardViewAndroid {...otherProps} hasHandleSubmitListener={!!handleSubmit} hasOnTokenizedListener={!!onTokenized} />;
+    return (
+      <NativeCardViewAndroid
+        {...otherProps}
+        hasHandleSubmitListener={!!handleSubmit}
+        hasOnTokenizedListener={!!onTokenized}
+      />
+    );
   }
 
   if (Platform.OS === 'ios' && NativeCardViewIOS) {

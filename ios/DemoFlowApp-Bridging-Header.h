@@ -6,3 +6,4 @@
 #import <React/RCTViewManager.h>
 #import <React/RCTUtils.h>
 #import <React/RCTConvert.h>
+#import <React/RCTUIManager.h>
